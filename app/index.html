@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+   <head>
+	   <meta charset="utf-8">
+	   <title>Registre Blockchain Catalunya</title>
+	   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
+
+       <link rel="stylesheet" href="css/skeleton.css">
+       <link rel="stylesheet" href="css/normalize.css">
+   </head>
+   <body>
+      <div class="container">
+
+      	 <div id="registeredsection" style="display:none">      	 	
+	        <div class="row">
+	           <div class="twelf columns">
+	           	   <img src="img/logotip.png">
+	               <h2>Benvingut</h2>
+	           </div>
+	        </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	           	  <b><span id=emailreg></b>
+	           	  <br><br>
+	           	  <div>La vostre direccio al blockchain d'ethereum es</div>
+	           	  <span id=addressreg></span>
+	           </div>
+	        </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	           	  <br><br>
+	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="backup">
+	           </div>
+	        </div>	        
+	        <div class="row">
+	           <div class="twelf columns">
+	           	  <br>
+	              <input class="button" type="button" value="Desvincular dispositiu" id="unlink">
+	           </div>
+	        </div>	        
+      	 </div>
+         
+         <div id="unregisteredsection" style="display:none" >
+		     <form>
+		        <div class="row">
+		           <div class="twelf columns">
+		           	   <img src="img/logotip.png">
+		               <h2>Formulari de registre</h2>
+    		           <div>Si us plau, introduiu les vostres dades, es generara una adreca del blockhain ethereum que us permetrà participar en les concursos i votacions de l'associacio, i cal que la protegiu en una contrassenya.<br><br></div>
+		           </div>
+		        </div>
+		        <div class="row">
+		           <div class="twelf columns">
+		              <label for="firstname">Nom</label>
+		              <input class="u-full-width" type="text" id="firstname">
+		           </div>
+		        </div>
+		        <div class="row">
+		           <div class="twelf columns">
+		              <label for="secondname">Cogonms</label>
+		              <input class="u-full-width" type="text" id="secondname">
+		           </div>
+		       </div>
+		        <div class="row">
+		           <div class="twelf columns">
+		              <label for="email">Email</label>
+		              <input class="u-full-width" type="email" id="email">
+		           </div>
+		        </div>
+		        <div class="row">
+		           <div class="twelf columns">
+		              <label for="passwd1">Contrassenya</label>
+		              <input class="u-full-width" type="password" id="passwd1">
+		           </div>
+		       </div>
+		        <div class="row">
+		           <div class="twelf columns">
+		              <label for="passwd2">Confirmeu contrassenya</label>
+		              <input class="u-full-width" type="password" id="passwd2">
+		           </div>
+		       </div>
+		        <div class="row">
+		           <div class="twelf columns">
+			          <br><br>
+		              <input class="button-primary" type="button" value="Generar claus i registrar >" id="register">
+		           </div>
+		        </div>
+		     </form>
+	      </div>
+      </div>
+   </body>
+</html>
