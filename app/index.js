@@ -176,23 +176,21 @@ function registerid() {
 			)
 
 			console.log(JSON.stringify(msg))
-/*
+
 			$.ajax({
-            	url: '/test/PersonSubmit',
-            	type: 'post',
+            	url: 'http://localhost:8080/rpc',
+            	type: 'POST',
+            	contentType: 'application/json',
             	dataType: 'json',
-            	data: jsonRpcIn
-        	}).success((data) => {
+            	data: JSON.stringify(msg)
+        	}).done((data) => {
 				alert("Success")
-			}).error(() => {
+				console.log(data)
+			}).fail((err) => {
+				console.log(err)
 				alert("Failed")
 			})
-			
-			/// POST /api/v1/register/:<address>
-			/// data sent is:
-			/// { firstName : firstName, secondName : secondName, 
-			///   email: email, pof :{ r,s,v } }
-			
+/*						
 			ks.passwordProvider = function (callback) {
       			var pw = prompt("Please enter password", "Password");
       		    callback(null, pw);
