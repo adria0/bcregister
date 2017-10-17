@@ -10,26 +10,40 @@ import './/../node_modules/toastr/build/toastr.css';
 
 let keyStore
 
+function showSection(section) {
+
+	$('#mainsection').hide()
+	$('#createnewsection').hide()
+	$('#registeredsection').hide()
+	$('#restoresection').hide()
+
+	$(section).show()
+}
+
 function showMainSection() {
 
 	if (store.get('bc-address') === undefined) {
-		showRegisterSection()
+		showSection('#mainsection')
 	} else {
 		showRegisteredSection()
 	}
 }
 
-function showRegisterSection() {
+function showCreateSection() {
 
-	$('#unregisteredsection').show()
-	$('#registeredsection').hide()
+	showSection('#createnewsection')
+
+}
+
+function showRestoreSection() {
+
+	showSection('#restoresection')
 
 }
 
 function showRegisteredSection() {
 
-	$('#unregisteredsection').hide()
-	$('#registeredsection').show()
+	showSection('#registeredsection')
 	
 	const address = store.get('bc-address')
 	const pvk = store.get('bc-pvk')
@@ -41,8 +55,7 @@ function showRegisteredSection() {
 
 }
 
-function unlink() {
-
+function unlinkid() {
 	const agree = confirm("Esteu segurs?")
 	if (agree==true) {
 		store.remove('bc-address')
@@ -52,36 +65,66 @@ function unlink() {
 	}
 }
 
-function backup() {
+function backupid() {
 	const pvk = store.get('bc-pvk')
 	var blob = new Blob([pvk], {type: "text/json;charset=utf-8"});
 	filesaver.saveAs(blob, "bc_identity.json");
 }
 
+function restoreid() {
+
+	const passwd = $("#restorepasswd").val()
+	const file = $("#restorefile")[0].files[0]
+
+	var reader = new FileReader();
+	reader.onload = function(e) {
+	  const ks = lightwallet.keystore.deserialize(reader.result)
+	  ks.keyFromPassword(passwd, function (err, pwDerivedKey) {
+
+	  	if (ks.isDerivedKeyCorrect(pwDerivedKey)) {
+
+		    const address = ks.getAddresses()[0]
+		    store.set('bc-address' , address)
+		    store.set('bc-pvk' , ks.serialize())
+			toastr.info('Identitat importada');
+			showMainSection() 
+
+	  	} else {
+			toastr.error('Contrassenya invalida');	  		
+	  	}
+
+	    if (err) throw err;
+
+	  })
+
+	}
+    reader.readAsText(file);
+}
+
+
 function signJsonRpc(ks, address, pwDerivedKey, method, params) {
 
-	const nonce = (+ new Date()).toString('16') 			
-	const paramsWithNonce = params.concat(nonce)
+	const nonce = + new Date()			
+	const paramsWithNonce = params.concat(method).concat(nonce)
 	const encoded = rlp.encode(paramsWithNonce);
 
 	const sig = lightwallet.signing.signMsg(
 		ks, pwDerivedKey, encoded, address
 	)
-	const paramsWithSignature = params.concat([
-		Buffer.from(sig.r).toString('hex'),
-		Buffer.from(sig.s).toString('hex'),
-		Buffer.from(new Uint8Array([sig.v])).toString('hex')			
-	])
+	const sighex = 
+		Buffer.from(sig.r).toString('hex')+
+		Buffer.from(sig.s).toString('hex')+
+		Buffer.from(new Uint8Array([sig.v])).toString('hex')
 
 	return {
 		"jsonrpc": "2.0",
 		"method": method,
-		"params": paramsWithSignature,
+		"params": params.concat(address).concat(sighex),
 		"id": nonce
 	}
 }
 
-function register() {
+function registerid() {
 
 	const firstName = $("#firstname").val()
 	const secondname = $("#secondname").val()
@@ -115,7 +158,7 @@ function register() {
 		    if (err) throw err;
 
 		    ks.generateNewAddress(pwDerivedKey, 1);
-		    const address = ks.getAddresses()[0]
+		    const address = "0x"+ks.getAddresses()[0]
 
 		    store.set('bc-address' , address)
 		    store.set('bc-pvk' , ks.serialize())
@@ -132,8 +175,8 @@ function register() {
 				[firstName,secondname,email]
 			)
 
-			console.log(msg)
-
+			console.log(JSON.stringify(msg))
+/*
 			$.ajax({
             	url: '/test/PersonSubmit',
             	type: 'post',
@@ -154,7 +197,7 @@ function register() {
       			var pw = prompt("Please enter password", "Password");
       		    callback(null, pw);
     		};
-
+*/
 			showRegisteredSection()
 
 	  });
@@ -164,9 +207,13 @@ function register() {
 
 window.addEventListener('load', function() {
 
-	$('#register').click(() => register())
-	$('#backup').click(() => backup())
-	$('#unlink').click(() => unlink())
+	$('#begincreateid').click(() => showCreateSection())
+	$('#beginrestoreid').click(() => showRestoreSection())
+	$('#restoreid').click(() => restoreid())
+	$('#registerid').click(() => registerid())
+	$('#backupid').click(() => backupid())
+	$('#unlinkid').click(() => unlinkid())
+	$('#home').click(() => showMainSection())
 
 	showMainSection() 
 })

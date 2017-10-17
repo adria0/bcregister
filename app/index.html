@@ -13,11 +13,33 @@
    <body>
       <div class="container">
 
-      	 <div id="registeredsection" style="display:none">      	 	
+      	 <div id="mainsection" style="display:none">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
 	           	   <img src="img/logotip.png">
 	               <h2>Benvingut</h2>
+	           	   <div>No hem detectat cap identitat instal·lada, que voleu fer?</div>
+	           </div>
+	        </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	           	  <br><br>
+	              <input class="button-primary" type="button" value="Crear nova" id="begincreateid">
+	              <input class="button-primary" type="button" value="Recuperar" id="beginrestoreid">
+	           </div>
+	        </div>	        
+	        <div class="row">
+	           <div class="twelf columns">
+	           	  <br>
+	           </div>
+	        </div>	        
+      	 </div>
+
+      	 <div id="registeredsection" style="display:none">      	 	
+	        <div class="row">
+	           <div class="twelf columns">
+	           	   <img src="img/logotip.png">
+	               <h2>Benvinguts</h2>
 	           </div>
 	        </div>
 	        <div class="row">
@@ -31,18 +53,46 @@
 	        <div class="row">
 	           <div class="twelf columns">
 	           	  <br><br>
-	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="backup">
+	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="backupid">
 	           </div>
 	        </div>	        
 	        <div class="row">
 	           <div class="twelf columns">
 	           	  <br>
-	              <input class="button" type="button" value="Desvincular dispositiu" id="unlink">
+	              <input class="button" type="button" value="Desvincular dispositiu" id="unlinkid">
+	           </div>
+	        </div>	        
+      	 </div>
+
+      	 <div id="restoresection" style="display:none">      	 	
+	        <div class="row">
+	           <div class="twelf columns">
+	           	   <img src="img/logotip.png">
+	               <h2>Restaurar identitat</h2>
+	           </div>
+	        </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	              <label for="restorefile">Arxiu de claus</label>
+	              <input class="u-full-width" type="file" id="restorefile">
+	           </div>
+	       </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	              <label for="restorepasswd">Contrassenya</label>
+	              <input class="u-full-width" type="password" id="restorepasswd">
+	           </div>
+	       </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	           	  <br>
+	           	  <input class="button" type="button" value="&lt;" id="home">
+	              <input class="button-primary" type="button" value="Recuperar >" id="restoreid">
 	           </div>
 	        </div>	        
       	 </div>
          
-         <div id="unregisteredsection" style="display:none" >
+         <div id="createnewsection" style="display:none" >
 		     <form>
 		        <div class="row">
 		           <div class="twelf columns">
@@ -84,7 +134,8 @@
 		        <div class="row">
 		           <div class="twelf columns">
 			          <br><br>
-		              <input class="button-primary" type="button" value="Generar claus i registrar >" id="register">
+  		              <input class="button" type="button" value="&lt;" id="home">
+		              <input class="button-primary" type="button" value="Registrar identitat >" id="registerid">
 		           </div>
 		        </div>
 		     </form>
