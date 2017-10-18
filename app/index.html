@@ -9,28 +9,49 @@
 
        <link rel="stylesheet" href="css/skeleton.css">
        <link rel="stylesheet" href="css/normalize.css">
+       <link rel="stylesheet" href="css/app.css">
    </head>
    <body>
       <div class="container">
 
+        <!-- header ==============================  -->
+        <div id="header" class="row">
+           <div class="twelf columns">
+           	   <img src="img/logotip.png">
+           </div>
+        </div>
+
+        <!-- sections ==============================  -->
       	 <div id="mainsection" style="display:none">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
-	           	   <img src="img/logotip.png">
 	               <h2>Benvingut</h2>
 	           	   <div>No hem detectat cap identitat instal·lada, que voleu fer?</div>
 	           </div>
 	        </div>
 	        <div class="row">
 	           <div class="twelf columns">
-	           	  <br><br>
-	              <input class="button-primary" type="button" value="Crear nova" id="begincreateid">
-	              <input class="button-primary" type="button" value="Recuperar" id="beginrestoreid">
+	              <input class="button-primary" type="button" value="Crear nova" id="uiCreateSection_show">
+	              <input class="button-primary" type="button" value="Recuperar" id="uiRestoreSection_show">
 	           </div>
 	        </div>	        
+      	 </div>
+
+      	 <div id="authsection" style="display:none">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
-	           	  <br>
+	               <h2>Accedir</h2>
+	           </div>
+	        </div>
+	        <div class="row">
+	           <div class="ten columns">
+	              <label for="restorepasswd">Contrassenya</label>
+	              <input class="u-full-width" type="password" id="authpasswd">
+	           </div>
+	       </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	              <input class="button-primary" type="button" value="Accedir >" id="uiAuthSection_auth">
 	           </div>
 	        </div>	        
       	 </div>
@@ -38,28 +59,18 @@
       	 <div id="registeredsection" style="display:none">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
-	           	   <img src="img/logotip.png">
-	               <h2>Benvinguts</h2>
+	               <h2>Benvingut</h2>
 	           </div>
 	        </div>
 	        <div class="row">
 	           <div class="twelf columns">
 	           	  <b><span id=emailreg></b>
-	           	  <br><br>
-	           	  <div>La vostre direccio al blockchain d'ethereum es</div>
 	           	  <span id=addressreg></span>
 	           </div>
 	        </div>
 	        <div class="row">
 	           <div class="twelf columns">
-	           	  <br><br>
-	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="backupid">
-	           </div>
-	        </div>	        
-	        <div class="row">
-	           <div class="twelf columns">
-	           	  <br>
-	              <input class="button" type="button" value="Desvincular dispositiu" id="unlinkid">
+	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="uiBackupSection_backup">
 	           </div>
 	        </div>	        
       	 </div>
@@ -67,7 +78,6 @@
       	 <div id="restoresection" style="display:none">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
-	           	   <img src="img/logotip.png">
 	               <h2>Restaurar identitat</h2>
 	           </div>
 	        </div>
@@ -85,20 +95,18 @@
 	       </div>
 	        <div class="row">
 	           <div class="twelf columns">
-	           	  <br>
-	           	  <input class="button" type="button" value="&lt;" id="home">
-	              <input class="button-primary" type="button" value="Recuperar >" id="restoreid">
+	           	  <input class="button-primary" type="button" value="&lt;" id="uiRestoreSection_back">
+	              <input class="button-primary" type="button" value="Recuperar >" id="uiRestoreSection_restore">
 	           </div>
 	        </div>	        
       	 </div>
          
-         <div id="createnewsection" style="display:none" >
+         <div id="createsection" style="display:none" >
 		     <form>
 		        <div class="row">
 		           <div class="twelf columns">
-		           	   <img src="img/logotip.png">
 		               <h2>Formulari de registre</h2>
-    		           <div>Si us plau, introduiu les vostres dades, es generara una adreca del blockhain ethereum que us permetrà participar en les concursos i votacions de l'associacio, i cal que la protegiu en una contrassenya.<br><br></div>
+    		           <div>Si us plau, introduiu les vostres dades, es generara una adreca del blockhain ethereum que us permetrà participar en les concursos i votacions de l'associacio, i cal que la protegiu en una contrassenya.</div>
 		           </div>
 		        </div>
 		        <div class="row">
@@ -121,6 +129,18 @@
 		        </div>
 		        <div class="row">
 		           <div class="twelf columns">
+		              <label for="mode">Visibilitat</label>
+					  <select class="u-full-width"  id="mode">
+						 <option value="volvo">Public</option>
+						 <option value="volvo">Només socis entitat</option>
+						 <option value="saab">Privat</option>
+					   </select>
+		           </div>
+		        </div>
+
+
+		        <div class="row">
+		           <div class="twelf columns">
 		              <label for="passwd1">Contrassenya</label>
 		              <input class="u-full-width" type="password" id="passwd1">
 		           </div>
@@ -134,12 +154,20 @@
 		        <div class="row">
 		           <div class="twelf columns">
 			          <br><br>
-  		              <input class="button" type="button" value="&lt;" id="home">
-		              <input class="button-primary" type="button" value="Registrar identitat >" id="registerid">
+  		              <input class="button-primary" type="button" value="&lt;" id="uiCreateSection_back">
+		              <input class="button-primary" type="button" value="Registrar identitat >" id="uiCreateSection_create">
 		           </div>
 		        </div>
 		     </form>
 	      </div>
+
+	      <!-- footer ==============================  -->
+          <div class="row">
+             <div class="twelf columns">
+               <span id="footer">
+            </div>
+          </div>
+
       </div>
    </body>
 </html>

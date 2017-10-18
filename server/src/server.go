@@ -88,9 +88,9 @@ func verifyMsg(in JsonRpcInMsg) ([]interface{}, string,error) {
 }
 
 type BcMember struct {
-	FirstName string
-	SecondName string
-	Email string
+	FirstName string `json:"firstName"`
+	SecondName string `json:"secondName"`
+	Email string `json:"email"`
 }
 
 func dispatchMsg(address, method string, args []interface{}) (interface{},*JsonRpcErrorMsg) {
@@ -112,7 +112,7 @@ func dispatchMsg(address, method string, args []interface{}) (interface{},*JsonR
 
 	}
 
-	if (method == "bc_login" ) {
+	if (method == "bc_auth" ) {
 
 		serialized, err := ioutil.ReadFile("member-"+address)
 		if err != nil {
