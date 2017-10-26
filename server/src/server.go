@@ -6,8 +6,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"	
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
+	emailer "github.com/jordan-wright/email"
 	"encoding/json"
+	"crypto/hmac"
+	"crypto/sha256"
+	"net/smtp"
 	"strings"
+	"net/url"
 	"io/ioutil"
 	"log"
 	"fmt"
@@ -54,7 +59,58 @@ var (
 		Message : "Bad signature",
 	}
 
+	errUnregistered = &JsonRpcErrorMsg{
+		Code : 993,
+		Message : "No registrat",
+	}
+
 )
+
+const (
+	emailAuthCode = "D354151CE23AF56154AE7BB313683"
+)
+
+func getEmailAuthCode(address, email string) string {
+	mac := hmac.New(sha256.New, []byte(emailAuthCode))
+	mac.Write([]byte(address))
+	mac.Write([]byte(email))
+	sum := mac.Sum(nil)
+	return hex.EncodeToString(sum)
+}
+
+func sendAuthEmail(address, email string) error {
+
+	auth := smtp.PlainAuth(
+		"",
+		"adria@blockchaincatalunya.org",
+		"fvbHH33gbfrhn54354vf",
+		"authsmtp.blockchaincatalunya.org",
+	)
+
+	e := emailer.NewEmail()
+	e.Headers.Add("Content-Transfer-Encoding","quoted-printable")
+	e.From = "Adria <adria@blockchaincatalunya.org>"
+	e.To = []string{email}
+	e.Subject = "Blockchain Catalunya - Verificació email"
+
+    var link *url.URL
+    link, err := url.Parse("http://localhost:8080")
+    if err != nil {
+        return err
+    }
+    link.Path += "/emailreg"
+    params := url.Values{}
+    params.Add("address", address)
+    params.Add("code", getEmailAuthCode(address,email))
+    link.RawQuery = params.Encode()
+    linkText := link.String()
+
+    msg := "<h1>Blockchain catalunya</h1><br>Feu click <a href='"+linkText+"''>Aqui</a> per verificar el vostre email"
+
+	e.HTML = []byte(msg)
+
+	return e.Send("authsmtp.blockchaincatalunya.org:587",auth)
+}
 
 func verifyMsg(in JsonRpcInMsg) ([]interface{}, string,error) {
 
@@ -88,48 +144,97 @@ func verifyMsg(in JsonRpcInMsg) ([]interface{}, string,error) {
 }
 
 type BcMember struct {
+	Address string `json:"address"`
 	FirstName string `json:"firstName"`
 	SecondName string `json:"secondName"`
 	Email string `json:"email"`
+	EmailVerified bool `json:"emailVerified"`
 }
 
-func dispatchMsg(address, method string, args []interface{}) (interface{},*JsonRpcErrorMsg) {
+type Directory struct {
+	DataFolder string
+}
+
+func NewDirectory(dataFolder string) *Directory {
+	return &Directory{dataFolder}
+}
+
+func (d *Directory) Add(member *BcMember) error {
+
+	serialized, err := json.Marshal(member)
+
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile("member-"+member.Address,serialized,0666)	
+}
+
+func (d *Directory) Update(member *BcMember) error {
+
+	serialized, err := json.Marshal(member)
+
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile("member-"+member.Address,serialized,0666)	
+}
+
+func (d *Directory) Read(address string) (*BcMember,error) {
+
+	serialized, err := ioutil.ReadFile("member-"+address)
+	if err != nil {
+		return nil,err
+	}
+
+	var member BcMember
+	err = json.Unmarshal([]byte(serialized), &member)
+	if err!=nil {
+		return nil, err
+	}
+
+	return &member, nil
+}
+
+func dispatchMsg(directory *Directory, address, method string, args []interface{}) (interface{},*JsonRpcErrorMsg) {
 
 	if (method == "bc_register" ) {
 
-		serialized, err := json.Marshal(&BcMember{
-			FirstName : args[0].(string),
-			SecondName : args[1].(string),
-			Email :  args[2].(string),
+		firstName := args[0].(string)
+		secondName := args[1].(string)
+		email := args[2].(string)
+
+		member, err := directory.Read(address)
+		if err == nil {
+			if member.EmailVerified {
+				err = fmt.Errorf("Address already registred")
+			}
+		}
+
+		err = directory.Add(&BcMember{
+			Address : address,
+			FirstName : firstName,
+			SecondName : secondName,
+			Email : email,
 		})
+
 		if err!=nil {
 			return nil, errInternalError
 		}
-
-		ioutil.WriteFile("member-"+address,serialized,0666)
-
+		
+		sendAuthEmail(address,email)
 		return nil, nil
 
 	}
 
 	if (method == "bc_auth" ) {
 
-		serialized, err := ioutil.ReadFile("member-"+address)
+		member, err := directory.Read(address)
 		if err != nil {
-			return nil, &JsonRpcErrorMsg{
-				Code : 1,
-				Message : "No registrat",
-			}
+			return nil, errUnregistered
 		}
-
-		var member BcMember
-		err = json.Unmarshal([]byte(serialized), &member)
-		if err!=nil {
-			return nil, errInternalError
-		}
-
 		return member, nil
-
 	}
 
 	return nil, errUnknownMethod
@@ -138,6 +243,8 @@ func dispatchMsg(address, method string, args []interface{}) (interface{},*JsonR
 
 func main() {
 
+	directory := NewDirectory("")
+
 	r := gin.Default()
 
     r.Use(func(c *gin.Context) {
@@ -145,6 +252,31 @@ func main() {
         c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type,Token")
         c.Next()
     })
+
+	r.GET("/emailreg", func(c *gin.Context) {
+		address := c.Query("address")
+		code := c.Query("code")
+
+		member, err := directory.Read(address)
+		if err == nil {
+			expectedCode := getEmailAuthCode(address,member.Email)
+			if expectedCode == code {
+				member.EmailVerified = true
+				directory.Update(member)
+			} else {
+				err = fmt.Errorf("Codi incorrecte")
+			}
+		}
+
+		if err == nil {
+			c.String(200, "Correu registrat correctament.")
+		} else {
+			c.String(200, "No s'ha pogut regisrar el correu.")
+		}
+
+	})
+
+	r.Static("/r", "../../web/dist")
 
     r.OPTIONS("/*cors", func(c *gin.Context) {
     })
@@ -172,7 +304,7 @@ func main() {
 			args,address,err = verifyMsg(in)
 
 			if err == nil {
-				retvalue, rpcErr = dispatchMsg(address,in.Method,args)
+				retvalue, rpcErr = dispatchMsg(directory,address,in.Method,args)
 			} else {
 				rpcErr = errBadSignature
 			}

@@ -5,8 +5,11 @@ import { default as validator } from 'validator';
 import { default as toastr } from 'toastr';
 import { default as store } from 'store';
 import { default as rlp } from 'rlp';
+import { default as web3 } from 'web3';
 
 import './/../node_modules/toastr/build/toastr.css';
+
+const ERC20ABI = '[{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"totalSupply","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"lue","type":"uint256"}],"name":"Approval","type":"event"}]'
 
 let keyStore
 let pwDerivedKey
@@ -215,11 +218,14 @@ function uiCreateSection_create() {
 	const passwd1 = $("#passwd1").val()
 	const passwd2 = $("#passwd2").val()
 
-	if (firstname.length < 2
-		|| secondName.length < 2 
-		|| !validator.isEmail(email)) {
-		toastr.error('Dades invalides');
-		return;
+	if (firstname.length < 2) {
+		toastr.error('Nom massa curt');		
+	}
+	if (secondName.length < 2) {
+		toastr.error('Cognom massa curt');		
+	}
+	if (!validator.isEmail(email)) {
+		toastr.error('Email invalid');		
 	}
 
 	if (passwd1.length < 4) {
@@ -295,4 +301,7 @@ window.addEventListener('load', function() {
 	$('#uiCreateSection_back').click(() => uiMainSection_show());
 
 	uiMainSection_show() 
+
+	const contract = new web3.eth.Contract(ERC20ABI, "0x9a642d6b3368ddc662CA244bAdf32cDA716005BC")
+	
 })
