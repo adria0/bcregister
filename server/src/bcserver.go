@@ -14,28 +14,32 @@ import (
 	"net/smtp"
 	"strings"
 	"net/url"
+	"net/http"
 	"io/ioutil"
 	"log"
 	"fmt"
 )
 
 type Config struct {
-	WwwRoot string
 	DataFolder string
-	WebPrefix string
-	EmailSender string
 	EmailAuthCode string
-	SmtpServer struct {
+	WebServer struct {
+		Prefix string
+		WwwRoot string
+		Bind string
+		CertFile string
+		KeyFile string
+	}
+	SmtpClient struct {
+		From string
 		Server string
-		User	string
+		User string
 		Password string
 		Domain string
 	}
 }
 
 var C Config
-
-
 
 type JsonRpcInMsg struct {
 	Jsonrpc string `json:"jsonrpc"`
@@ -82,15 +86,10 @@ var (
 		Code : 993,
 		Message : "No registrat",
 	}
-
-)
-
-const (
-	emailAuthCode = "D354151CE23AF56154AE7BB313683"
 )
 
 func getEmailAuthCode(address, email string) string {
-	mac := hmac.New(sha256.New, []byte(emailAuthCode))
+	mac := hmac.New(sha256.New, []byte(C.EmailAuthCode))
 	mac.Write([]byte(address))
 	mac.Write([]byte(email))
 	sum := mac.Sum(nil)
@@ -101,19 +100,19 @@ func sendAuthEmail(address, email string) error {
 
 	auth := smtp.PlainAuth(
 		"",
-		C.SmtpServer.User,
-		C.SmtpServer.Password,
-		C.SmtpServer.Domain,
+		C.SmtpClient.User,
+		C.SmtpClient.Password,
+		C.SmtpClient.Domain,
 	)
 
 	e := emailer.NewEmail()
 	e.Headers.Add("Content-Transfer-Encoding","quoted-printable")
-	e.From = C.EmailSender
+	e.From = C.SmtpClient.From
 	e.To = []string{email}
 	e.Subject = "Blockchain Catalunya - Verificació email"
 
     var link *url.URL
-    link, err := url.Parse(C.WebPrefix)
+    link, err := url.Parse(C.WebServer.Prefix)
     if err != nil {
         return err
     }
@@ -128,7 +127,7 @@ func sendAuthEmail(address, email string) error {
 
 	e.HTML = []byte(msg)
 
-	return e.Send("authsmtp.blockchaincatalunya.org:587",auth)
+	return e.Send(C.SmtpClient.Server,auth)
 }
 
 func verifyMsg(in JsonRpcInMsg) ([]interface{}, string,error) {
@@ -188,7 +187,7 @@ func (d *Directory) Add(member *BcMember) error {
 		return err
 	}
 
-	return ioutil.WriteFile("member-"+member.Address,serialized,0666)	
+	return ioutil.WriteFile(d.DataFolder+"/member-"+member.Address,serialized,0666)	
 }
 
 func (d *Directory) Update(member *BcMember) error {
@@ -199,12 +198,12 @@ func (d *Directory) Update(member *BcMember) error {
 		return err
 	}
 
-	return ioutil.WriteFile("member-"+member.Address,serialized,0666)	
+	return ioutil.WriteFile(d.DataFolder+"/member-"+member.Address,serialized,0666)	
 }
 
 func (d *Directory) Read(address string) (*BcMember,error) {
 
-	serialized, err := ioutil.ReadFile("member-"+address)
+	serialized, err := ioutil.ReadFile(d.DataFolder+"/member-"+address)
 	if err != nil {
 		return nil,err
 	}
@@ -218,11 +217,11 @@ func (d *Directory) Read(address string) (*BcMember,error) {
 	return &member, nil
 }
 
-func dispatchMsg(directory *Directory, address, method string, args []interface{}) (interface{},*JsonRpcErrorMsg) {
+func dispatchMsg(c *gin.Context, directory *Directory, address, method string, args []interface{}) (interface{},*JsonRpcErrorMsg) {
 
 	if (method == "bc_register" ) {
 
-		if len(args) != 5 {
+		if len(args) != 6 {
 			return nil, errInternalError
 		}
 
@@ -231,6 +230,21 @@ func dispatchMsg(directory *Directory, address, method string, args []interface{
 		email := args[2].(string)
 		mode := args[3].(string)
 		interest := args[4].(string)
+		captcha := args[5].(string)
+
+	    form := url.Values{}
+	    form.Add("remoteip", c.ClientIP())
+	    form.Add("response", captcha)
+	    form.Add("secret", "6LcMHDYUAAAAANXkhm1fPUBKAwQrNAGXY6M3hb07")
+	    encodedform := form.Encode()
+		siteverifyurl := "https://www.google.com/recaptcha/api/siteverify"
+		req, err := http.NewRequest("POST", siteverifyurl, strings.NewReader(encodedform))
+		hc := http.Client{}
+		resp, err := hc.Do(req)
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		log.Printf("CLIENTIP %v",c.ClientIP())
+		log.Printf("CaptchaReturn is %v %v %v",resp.StatusCode, string(body),encodedform)
 
 		member, err := directory.Read(address)
 		if err == nil {
@@ -319,7 +333,7 @@ func main() {
 
 	})
 
-	r.Static("/r", C.WwwRoot)
+	r.Static("/r", C.WebServer.WwwRoot)
 
     r.OPTIONS("/*cors", func(c *gin.Context) {
     })
@@ -347,7 +361,7 @@ func main() {
 			args,address,err = verifyMsg(in)
 
 			if err == nil {
-				retvalue, rpcErr = dispatchMsg(directory,address,in.Method,args)
+				retvalue, rpcErr = dispatchMsg(c,directory,address,in.Method,args)
 			} else {
 				rpcErr = errBadSignature
 			}
@@ -374,5 +388,5 @@ func main() {
 		}
 
 	})
-	r.Run()
+	r.RunTLS(C.WebServer.Bind, C.WebServer.CertFile, C.WebServer.KeyFile)
 }

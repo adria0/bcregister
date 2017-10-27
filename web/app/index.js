@@ -25,12 +25,12 @@ function showSection(section) {
 
 	$(section).show()
 
-	if (store.get('bc-address') !== undefined) {
+	if (store.get('bc-address') === undefined) {
+	} else {
 		let html = store.get('bc-address')
 		html += " <a href=# id=unlinkid>desvincular</a>"
 		$("#footer").html(html)
 		$('#unlinkid').click(() => unlinkid())
-	} else {
 	}
 
 }
@@ -219,7 +219,7 @@ function postJsonRpc(method, params) {
 	console.log(JSON.stringify(msg))
 
 	return $.ajax({
-    	url: 'http://localhost:8080/rpc',
+    	url: '/rpc',
     	type: 'POST',
     	contentType: 'application/json',
     	dataType: 'json',
@@ -232,6 +232,7 @@ function postJsonRpc(method, params) {
 
 function uiCreateSection_create() {
 
+	const captcha = grecaptcha.getResponse()
 	const firstName = $("#firstname").val()
 	const secondName = $("#secondname").val()
 	const email = $("#email").val()
@@ -260,6 +261,11 @@ function uiCreateSection_create() {
 		return;
 	}
 
+	if (captcha.length == 0 ) {
+		toastr.error('Heu de validar que sou humà');
+		return;		
+	}
+
     lightwallet.keystore.createVault(
   		{ password: passwd1 },
   		function (err, ks) {
@@ -284,7 +290,7 @@ function uiCreateSection_create() {
 
 			postJsonRpc(
 				"bc_register",
-				[firstName,secondName,email,mode,interest]
+				[firstName,secondName,email,mode,interest,captcha]
 			).done((data) => {
 				
 				if (data.error) {
@@ -311,6 +317,9 @@ function uiCreateSection_create() {
 	});
 }
 
+function uiCreateSection_correctCaptcha(response) {
+	alert(response)
+}
 
 window.addEventListener('load', function() {
 

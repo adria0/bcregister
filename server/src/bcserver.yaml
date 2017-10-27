@@ -1,9 +1,13 @@
+WebServer :
+  WwwRoot : ../../web/dist
+  Prefix : https://localhost:8443
+  Bind : "0.0.0.0:8443"
+  CertFile : config/server.crt
+  KeyFile : config/server.key
 DataFolder : ./data
-WwwRoot : ../../web/dist
-WebPrefix : http://localhost:8080
 EmailAuthCode : D354151CE23AF56154AE7BB313683
-EmailSender : adria@blockchaincatalunya.org
-SmtpServer :
+SmtpClient :
+  From : adria@blockchaincatalunya.org
   Server : authsmtp.blockchaincatalunya.org:587
   Domain : authsmtp.blockchaincatalunya.org
   User : adria@blockchaincatalunya.org
