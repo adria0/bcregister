@@ -74,7 +74,21 @@ function uiRegisteredSection_show() {
 
 	showSection('#registeredsection')
 	console.log("userInfo",userInfo)
-	$('#emailreg').html(userInfo.email+"<br>"+userInfo.firstName+" "+userInfo.secondName)
+	
+	let info = userInfo.firstName+" "+userInfo.secondName+"<br>"+userInfo.email
+
+	if (userInfo.emailVerified) {
+		info += " (Verificat)"
+	} else {
+		info += " (No verificat)"
+		toastr.error("Consulteu el correu per verificar l'email");
+	}
+
+	if ( store.get('bc-backupdone') == false ) {
+		$('#backupdiv').show()
+	}
+
+	$('#emailreg').html(info+"<br>")
 
 	const address = store.get('bc-address')
 	const link = "<a href='https://etherscan.io/address/"+address+"'>"+address+"</a>"
@@ -116,6 +130,7 @@ function unlinkid() {
 	if (agree==true) {
 		store.remove('bc-address')
 		store.remove('bc-pvk')
+		store.remove('bc-backupdone')		
 		userInfo = null
 		uiMainSection_show()
 	}
@@ -125,6 +140,9 @@ function uiBackupSection_backup() {
 	const pvk = store.get('bc-pvk')
 	var blob = new Blob([pvk], {type: "text/json;charset=utf-8"});
 	filesaver.saveAs(blob, "bc_identity.json");
+	store.set('bc-backupdone',true)
+	$('#backupdiv').hide()
+
 }
 
 function uiRestoreSection_restore() {
@@ -145,6 +163,8 @@ function uiRestoreSection_restore() {
 		    const address = "0x"+ks.getAddresses()[0]
 		    store.set('bc-address' , address)
 		    store.set('bc-pvk' , ks.serialize())
+		    store.set('bc-backupdone' , true)
+
 			toastr.info('Identitat importada');
 
 			postJsonRpc(
@@ -217,6 +237,8 @@ function uiCreateSection_create() {
 	const email = $("#email").val()
 	const passwd1 = $("#passwd1").val()
 	const passwd2 = $("#passwd2").val()
+	const mode = $("#mode").val()
+	const interest = $("#interest").val()
 
 	if (firstname.length < 2) {
 		toastr.error('Nom massa curt');		
@@ -253,6 +275,7 @@ function uiCreateSection_create() {
 
 		    store.set('bc-address' , address)
 		    store.set('bc-pvk' , ks.serialize())
+		    store.set('bc-backupdone' , false)
 
 			$("#passwd1").val("")
 			$("#passwd2").val("")
@@ -261,7 +284,7 @@ function uiCreateSection_create() {
 
 			postJsonRpc(
 				"bc_register",
-				[firstName,secondName,email]
+				[firstName,secondName,email,mode,interest]
 			).done((data) => {
 				
 				if (data.error) {

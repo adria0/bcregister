@@ -61,7 +61,7 @@
       	 <div id="registeredsection" style="display:none">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
-	               <h2>Benvingut</h2>
+	               <h2>Area privada</h2>
 	           </div>
 	        </div>
 	        <div class="row">
@@ -70,8 +70,9 @@
 	           	  <span id=addressreg></span>
 	           </div>
 	        </div>
-	        <div class="row">
+	        <div class="row" style="display:none" id="backupdiv">
 	           <div class="twelf columns">
+	           	  Atenció! Cal que feu una copia de seguretat de les claus. Feu click al botó per descarregar l'arxiu de copia de seguretat. Deseu aquest arxiu a un lloc segur.<br><br>
 	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="uiBackupSection_backup">
 	           </div>
 	        </div>	        
@@ -139,7 +140,12 @@
 					   </select>
 		           </div>
 		        </div>
-
+		        <div class="row">
+		           <div class="twelf columns">
+		              <label for="interest">Per què t'interessa Blockchain Catalunya? En quin grup de treball penses que vols participar?</label>
+					  <textarea class="u-full-width" placeholder="" id="interest"></textarea>             
+		           </div>
+		        </div>
 
 		        <div class="row">
 		           <div class="twelf columns">

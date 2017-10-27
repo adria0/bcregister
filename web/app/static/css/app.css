@@ -15,6 +15,12 @@ a {
 	font-size: 10px
 }
 
+#backupdiv {
+	border-style: dashed;
+	margin: 10px;
+	padding: 10px;
+}
+
 .row {
 	margin-top: 10px;
 

@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
 	emailer "github.com/jordan-wright/email"
+	"github.com/spf13/viper"
 	"encoding/json"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -17,6 +18,24 @@ import (
 	"log"
 	"fmt"
 )
+
+type Config struct {
+	WwwRoot string
+	DataFolder string
+	WebPrefix string
+	EmailSender string
+	EmailAuthCode string
+	SmtpServer struct {
+		Server string
+		User	string
+		Password string
+		Domain string
+	}
+}
+
+var C Config
+
+
 
 type JsonRpcInMsg struct {
 	Jsonrpc string `json:"jsonrpc"`
@@ -82,19 +101,19 @@ func sendAuthEmail(address, email string) error {
 
 	auth := smtp.PlainAuth(
 		"",
-		"adria@blockchaincatalunya.org",
-		"fvbHH33gbfrhn54354vf",
-		"authsmtp.blockchaincatalunya.org",
+		C.SmtpServer.User,
+		C.SmtpServer.Password,
+		C.SmtpServer.Domain,
 	)
 
 	e := emailer.NewEmail()
 	e.Headers.Add("Content-Transfer-Encoding","quoted-printable")
-	e.From = "Adria <adria@blockchaincatalunya.org>"
+	e.From = C.EmailSender
 	e.To = []string{email}
 	e.Subject = "Blockchain Catalunya - Verificació email"
 
     var link *url.URL
-    link, err := url.Parse("http://localhost:8080")
+    link, err := url.Parse(C.WebPrefix)
     if err != nil {
         return err
     }
@@ -147,6 +166,8 @@ type BcMember struct {
 	Address string `json:"address"`
 	FirstName string `json:"firstName"`
 	SecondName string `json:"secondName"`
+	Mode string `json:"mode"`
+	Interest string `json:"interest"`
 	Email string `json:"email"`
 	EmailVerified bool `json:"emailVerified"`
 }
@@ -201,9 +222,15 @@ func dispatchMsg(directory *Directory, address, method string, args []interface{
 
 	if (method == "bc_register" ) {
 
+		if len(args) != 5 {
+			return nil, errInternalError
+		}
+
 		firstName := args[0].(string)
 		secondName := args[1].(string)
 		email := args[2].(string)
+		mode := args[3].(string)
+		interest := args[4].(string)
 
 		member, err := directory.Read(address)
 		if err == nil {
@@ -217,6 +244,8 @@ func dispatchMsg(directory *Directory, address, method string, args []interface{
 			FirstName : firstName,
 			SecondName : secondName,
 			Email : email,
+			Mode : mode,
+			Interest: interest,
 		})
 
 		if err!=nil {
@@ -243,7 +272,21 @@ func dispatchMsg(directory *Directory, address, method string, args []interface{
 
 func main() {
 
-	directory := NewDirectory("")
+	viper.SetConfigType("yaml")
+	viper.SetConfigName("bcserver")
+	viper.AddConfigPath(".")
+	viper.SetEnvPrefix("BCSERVER") 
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := viper.Unmarshal(&C); err != nil {
+		log.Fatal(err)
+	}
+
+	directory := NewDirectory(C.DataFolder)
 
 	r := gin.Default()
 
@@ -276,7 +319,7 @@ func main() {
 
 	})
 
-	r.Static("/r", "../../web/dist")
+	r.Static("/r", C.WwwRoot)
 
     r.OPTIONS("/*cors", func(c *gin.Context) {
     })
