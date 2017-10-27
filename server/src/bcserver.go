@@ -15,6 +15,7 @@ import (
 	"strings"
 	"net/url"
 	"net/http"
+	"time"
 	"io/ioutil"
 	"log"
 	"fmt"
@@ -217,6 +218,10 @@ func (d *Directory) Read(address string) (*BcMember,error) {
 	return &member, nil
 }
 
+type RecaptchaResponse struct {
+	Success bool `json:"success"`
+}
+
 func dispatchMsg(c *gin.Context, directory *Directory, address, method string, args []interface{}) (interface{},*JsonRpcErrorMsg) {
 
 	if (method == "bc_register" ) {
@@ -232,19 +237,32 @@ func dispatchMsg(c *gin.Context, directory *Directory, address, method string, a
 		interest := args[4].(string)
 		captcha := args[5].(string)
 
-	    form := url.Values{}
-	    form.Add("remoteip", c.ClientIP())
-	    form.Add("response", captcha)
-	    form.Add("secret", "6LcMHDYUAAAAANXkhm1fPUBKAwQrNAGXY6M3hb07")
-	    encodedform := form.Encode()
-		siteverifyurl := "https://www.google.com/recaptcha/api/siteverify"
-		req, err := http.NewRequest("POST", siteverifyurl, strings.NewReader(encodedform))
-		hc := http.Client{}
-		resp, err := hc.Do(req)
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
+	    params := url.Values{}
+	    params.Add("remoteip", c.ClientIP())
+	    params.Add("response", captcha)
+	    params.Add("secret", "6LcMHDYUAAAAANXkhm1fPUBKAwQrNAGXY6M3hb07")
+		verificationURL := "https://www.google.com/recaptcha/api/siteverify"
+
+		httpClient := &http.Client{Timeout: 10 * time.Second}
+		httpResponse, err := httpClient.PostForm(verificationURL, params)
+		defer httpResponse.Body.Close()
+		body, err := ioutil.ReadAll(httpResponse.Body)
+		if err!=nil {
+			return nil, errInternalError
+		}
+
 		log.Printf("CLIENTIP %v",c.ClientIP())
-		log.Printf("CaptchaReturn is %v %v %v",resp.StatusCode, string(body),encodedform)
+		log.Printf("CaptchaReturn is %v %v",httpResponse.StatusCode, string(body))
+
+		var result RecaptchaResponse
+		err = json.Unmarshal([]byte(body), &result)
+		if err!=nil {
+			return nil, errInternalError
+		}
+		if !result.Success 	{
+			return nil, errInternalError			
+		}	
+
 
 		member, err := directory.Read(address)
 		if err == nil {
