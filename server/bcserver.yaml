@@ -1,0 +1,17 @@
+WebServer :
+  WwwRoot : /Users/amb/Feina/bc/register/web/dist
+  Prefix : https://localhost:8443
+  Bind : "0.0.0.0:8443"
+  CertFile : deploy/config/server.crt
+  KeyFile : deploy/config/server.key
+DataFolder : deploy/data
+EmailAuthCode : D354151CE23AF56154AE7BB313683
+SmtpClient :
+  From : adria@blockchaincatalunya.org
+  Domain : authsmtp.blockchaincatalunya.org
+  User : adria@blockchaincatalunya.org
+  Password : fvbHH33gbfrhn54354vf
+  Server : authsmtp.blockchaincatalunya.org:587
+Recaptcha :
+  Code : 6LcMHDYUAAAAAMoynz5EUzERHShUW2JhnV4eM_U0
+  Key : 6LcMHDYUAAAAANXkhm1fPUBKAwQrNAGXY6M3hb07

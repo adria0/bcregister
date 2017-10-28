@@ -279,12 +279,6 @@ function uiCreateSection_create() {
 		    ks.generateNewAddress(pwDerivedKey, 1);
 		    const address = "0x"+ks.getAddresses()[0]
 
-		    store.set('bc-address' , address)
-		    store.set('bc-pvk' , ks.serialize())
-		    store.set('bc-backupdone' , false)
-
-			$("#passwd1").val("")
-			$("#passwd2").val("")
 
 			/// --- sign proof of posession
 
@@ -297,6 +291,13 @@ function uiCreateSection_create() {
 					toastr.error(data.error.message);
 					return
 				}
+
+			    store.set('bc-address' , address)
+			    store.set('bc-pvk' , ks.serialize())
+			    store.set('bc-backupdone' , false)
+
+				$("#passwd1").val("")
+				$("#passwd2").val("")
 
 				userInfo = {
 					firstName : firstName,
