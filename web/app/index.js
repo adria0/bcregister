@@ -16,6 +16,11 @@ let pwDerivedKey
 let userInfo = null
 let jwt = ""
 
+function updateJwt(_jwt) {
+	jwt = _jwt
+	web3 = new Web3(new Web3.providers.HttpProvider("https://localhost:8443/web3",0,"jwt",_jwt));
+}
+
 function postSignedJsonRpc(method, params) {
 
 	const address = store.get('bc-address')
@@ -157,9 +162,7 @@ function uiAuthSection_auth() {
 				return
 			}
 			userInfo = resp.data.member
-			jwt = resp.data.jwt
-
-			console.log(resp)
+			updateJwt(resp.data.jwt)
 
 			uiRegisteredSection_show()
 		})
@@ -219,7 +222,7 @@ function uiRestoreSection_restore() {
 				}
 
 				userInfo = resp.data.member
-				jwt = resp.data.jwt
+				updateJwt(resp.data.jwt)
 
 				console.log(resp)
 				uiRegisteredSection_show()
@@ -236,8 +239,6 @@ function uiRestoreSection_restore() {
 	}
     reader.readAsText(file);
 }
-
-
 
 function uiCreateSection_create() {
 

@@ -2,7 +2,10 @@ package auth
 
 import (
   	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-gonic/gin"
 	"github.com/adriamb/bcdapp/config"
+	"encoding/base64"
+  	"strings"	
 	"time"
 	"fmt"
 )
@@ -42,3 +45,31 @@ func JwtVerifyToken(tokenString string) (string,error) {
 	}
 }
 
+func JwtVerifyHeaders(c *gin.Context) (string,error) {
+
+	header := c.GetHeader("Authorization")
+	authheader := strings.Split(header," ")
+	if len(authheader) != 2 {
+		return "",fmt.Errorf("Bad authentication header (1) ["+header+"]")
+	}
+
+	if authheader[0] != "Basic" {
+		return "",fmt.Errorf("Bad authentication header (2) ["+header+"]")
+	}
+
+	userpass,err := base64.StdEncoding.DecodeString(authheader[1])
+	if err != nil {
+		return "",fmt.Errorf("Bad authentication header (3) ["+header+"]")
+	}
+
+	splitted := strings.Split(string(userpass),":")
+	if len(splitted) != 2 || splitted[0] != "jwt" {
+		return "",fmt.Errorf("Bad authentication header (4) ["+header+"]")
+	}
+
+	address, err := JwtVerifyToken(splitted[1])
+	if err != nil {
+		return "",fmt.Errorf("Bad authentication header (5) ["+header+"]")
+	}
+	return address, nil
+}

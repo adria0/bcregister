@@ -9,8 +9,10 @@ import (
 	"github.com/adriamb/bcdapp/auth"
 	"github.com/adriamb/bcdapp/recaptcha"
 	"github.com/gin-gonic/gin"
-
+	"net/http"
+	"io/ioutil"
   	"log"
+  	"bytes"
 )
 
 var (
@@ -28,6 +30,7 @@ var (
 type BcRegisterOutMsg struct {
 	JWT string `json:"jwt"`
 }
+
 type BcAuthOutMsg struct {
 	JWT string `json:"jwt"`
 	Member *db.Member `json:"member"`
@@ -107,6 +110,35 @@ func jsonRpcAuth(c *gin.Context, address string, args []interface{}) (interface{
 
 }
 
+func web3proxy(c *gin.Context) {
+
+	_, err := auth.JwtVerifyHeaders(c)
+	if err != nil {
+        c.String(500,"Internal error")
+		return
+	}
+
+	inraw, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Printf("Failed reading request body",err)
+        c.String(500,"Internal error")
+		return
+	}
+
+  	client := http.Client{}
+    req, err := http.NewRequest("POST", config.C.Web3Url, bytes.NewBuffer(inraw))
+    resp, err := client.Do(req)
+    if err != nil {
+		log.Printf("Failed reading request body",err)
+        c.String(500,"Internal error")
+        return
+    }
+    outraw, _ := ioutil.ReadAll(resp.Body)
+
+    c.String(200,string(outraw))
+
+}
+
 func GETVerifyEmail(c *gin.Context) {
 
 	address := c.Query("address")
@@ -135,12 +167,19 @@ func main() {
 
 	r := gin.Default()
 
+	// web3 proxy
+	r.POST("/web3", web3proxy)
+
+	// www
+	r.Static("/r", config.C.WebServer.WwwRoot)
+
 	jsonrpc.Register("bc_register",jsonRpcRegister)
 	jsonrpc.Register("bc_auth",jsonRpcAuth)
 	r.POST("/rpc", jsonrpc.Handle)
 
+	// internal calls
 	r.GET("/emailreg", GETVerifyEmail)
-	r.Static("/r", config.C.WebServer.WwwRoot)
 
 	r.RunTLS(config.C.WebServer.Bind, config.C.WebServer.CertFile, config.C.WebServer.KeyFile)
+	
 }

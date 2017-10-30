@@ -8,6 +8,7 @@ import (
 type Config struct {
 	DataFolder string
 	ServerSecret string
+	Web3Url string
 	Recaptcha struct {
 		Code string
 		Key string
