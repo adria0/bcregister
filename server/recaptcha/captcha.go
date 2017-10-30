@@ -9,7 +9,6 @@ import (
 	"fmt"
 )
 
-
 type recaptchaResponse struct {
 	Success bool `json:"success"`
 }

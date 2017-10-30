@@ -6,22 +6,14 @@ import (
 	"github.com/adriamb/bcdapp/db"
 	"github.com/adriamb/bcdapp/email"
 	"github.com/adriamb/bcdapp/jsonrpc"
+	"github.com/adriamb/bcdapp/auth"
 	"github.com/adriamb/bcdapp/recaptcha"
 	"github.com/gin-gonic/gin"
-	"log"
+
+  	"log"
 )
 
 var (
-	errInternalError = &jsonrpc.ErrorMsg{
-		Code:    999,
-		Message: "Error intern",
-	}
-
-	errUnknownMethod = &jsonrpc.ErrorMsg{
-		Code:    990,
-		Message: "Unknown method",
-	}
-
 	errUnregistered = &jsonrpc.ErrorMsg{
 		Code:    993,
 		Message: "No registrat",
@@ -33,67 +25,85 @@ var (
 	}
 )
 
-func jsonRpcDispatcher(c *gin.Context, address, method string, args []interface{}) (interface{}, *jsonrpc.ErrorMsg) {
+type BcRegisterOutMsg struct {
+	JWT string `json:"jwt"`
+}
+type BcAuthOutMsg struct {
+	JWT string `json:"jwt"`
+	Member *db.Member `json:"member"`
+}
 
-	if method == "bc_register" {
+func jsonRpcRegister(c *gin.Context, address string, args []interface{}) (interface{}, *jsonrpc.ErrorMsg) {
 
-		if len(args) != 6 {
-			log.Print("*err bad-bc-register-args", len(args))
-			return nil, errInternalError
-		}
-
-		firstName := args[0].(string)
-		secondName := args[1].(string)
-		useremail := args[2].(string)
-		mode := args[3].(string)
-		interest := args[4].(string)
-		captcha := args[5].(string)
-
-		err := recaptcha.Verify(config.C.Recaptcha.Key, captcha, c.ClientIP())
-		if err != nil {
-			log.Print("*err recaptcha-verify", err)
-			return nil, errInternalError
-		}
-
-		member, err := db.Read(address)
-		if err == nil {
-			if member.EmailVerified {
-				return nil, errAlreadyRegistered
-			}
-		}
-
-		err = db.Add(&db.Member{
-			Address:    address,
-			FirstName:  firstName,
-			SecondName: secondName,
-			Email:      useremail,
-			Mode:       mode,
-			Interest:   interest,
-		})
-
-		if err != nil {
-			log.Print("*err db-add", err)
-			return nil, errInternalError
-		}
-		/* err = email.SendAuthEmail(address, useremail)
-		if err != nil {
-			log.Print("*err db-sendmail", err)
-			return nil, errInternalError
-		}
-		*/
-		return nil, nil
+	if len(args) != 6 {
+		log.Print("*err bad-bc-register-args", len(args))
+		return nil, jsonrpc.ErrInternal
 	}
 
-	if method == "bc_auth" {
+	firstName := args[0].(string)
+	secondName := args[1].(string)
+	useremail := args[2].(string)
+	mode := args[3].(string)
+	interest := args[4].(string)
+	captcha := args[5].(string)
 
-		member, err := db.Read(address)
-		if err != nil {
-			return nil, errUnregistered
-		}
-		return member, nil
+	err := recaptcha.Verify(config.C.Recaptcha.Key, captcha, c.ClientIP())
+	if err != nil {
+		log.Print("*err recaptcha-verify", err)
+		return nil, jsonrpc.ErrInternal
 	}
 
-	return nil, errUnknownMethod
+	member, err := db.Read(address)
+	if err == nil {
+		if member.EmailVerified {
+			return nil, errAlreadyRegistered
+		}
+	}
+
+	err = db.Add(&db.Member{
+		Address:    address,
+		FirstName:  firstName,
+		SecondName: secondName,
+		Email:      useremail,
+		Mode:       mode,
+		Interest:   interest,
+	})
+
+	if err != nil {
+		log.Print("*err db-add", err)
+		return nil, jsonrpc.ErrInternal
+	}
+	/*
+	err = email.SendAuthEmail(address, useremail)
+	if err != nil {
+		log.Print("*err db-sendmail", err)
+		return nil, errInternalError
+	}
+	*/
+	token,err := auth.JwtCreateToken(address)
+	if err != nil {
+		log.Print("*err db-createtoken", err)
+		return nil, jsonrpc.ErrInternal
+	}
+
+	return &BcRegisterOutMsg{token},nil 
+
+}
+
+func jsonRpcAuth(c *gin.Context, address string, args []interface{}) (interface{}, *jsonrpc.ErrorMsg) {
+
+	member, err := db.Read(address)
+	if err != nil {
+		return nil, errUnregistered
+	}
+
+	token, err := auth.JwtCreateToken(address)
+	if err != nil {
+		log.Print("*err db-createtoken", err)
+		return nil, jsonrpc.ErrInternal
+	}
+
+	return &BcAuthOutMsg{token, member}, nil
 
 }
 
@@ -125,7 +135,8 @@ func main() {
 
 	r := gin.Default()
 
-	jsonrpc.SetDispatcher(jsonRpcDispatcher)
+	jsonrpc.Register("bc_register",jsonRpcRegister)
+	jsonrpc.Register("bc_auth",jsonRpcAuth)
 	r.POST("/rpc", jsonrpc.Handle)
 
 	r.GET("/emailreg", GETVerifyEmail)

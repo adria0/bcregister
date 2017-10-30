@@ -14,6 +14,45 @@ const ERC20ABI = '[{"constant":false,"inputs":[{"name":"_spender","type":"addres
 let keyStore
 let pwDerivedKey
 let userInfo = null
+let jwt = ""
+
+function postSignedJsonRpc(method, params) {
+
+	const address = store.get('bc-address')
+
+	const nonce = + new Date()			
+	const paramsWithNonce = params.concat(method).concat(nonce)
+	const encoded = rlp.encode(paramsWithNonce);
+
+	const sig = lightwallet.signing.signMsg(
+		keyStore, pwDerivedKey, encoded, address
+	)
+	const sighex = 
+		Buffer.from(sig.r).toString('hex')+
+		Buffer.from(sig.s).toString('hex')+
+		Buffer.from(new Uint8Array([sig.v])).toString('hex')
+
+	const msg = {
+		"jsonrpc" : "2.0",
+		"method"  : method,
+		"params"  : params.concat(address),
+		"id"      : nonce
+	}
+
+	return $.ajax({
+    	url: '/rpc',
+    	type: 'POST',
+    	contentType: 'application/json',
+    	dataType: 'json',
+    	data: JSON.stringify(msg),
+    	beforeSend: function(request) {
+    		request.setRequestHeader("Authorization","Signature "+sighex);
+  		},
+	}).fail((err) => {
+		toastr.error("Error conectant amb el servidor")
+		console.log(err)
+	})
+}
 
 function showSection(section) {
 
@@ -109,16 +148,19 @@ function uiAuthSection_auth() {
 		keyStore = ks
 		pwDerivedKey = _pwDerivedKey;
 
-		postJsonRpc(
+		postSignedJsonRpc(
 			"bc_auth",
 			[]
-		).done((data) => {
-			if (data.error) {
-				toastr.error(data.error.message);
+		).done((resp) => {
+			if (resp.error) {
+				toastr.error(resp.error.message);
 				return
 			}
-			userInfo = data.data
-			console.log(userInfo)
+			userInfo = resp.data.member
+			jwt = resp.data.jwt
+
+			console.log(resp)
+
 			uiRegisteredSection_show()
 		})
 	})
@@ -167,16 +209,19 @@ function uiRestoreSection_restore() {
 
 			toastr.info('Identitat importada');
 
-			postJsonRpc(
+			postSignedJsonRpc(
 				"bc_auth",
 				[]
-			).done((data) => {
-				if (data.error) {
-					toastr.error(data.error.message);
+			).done((resp) => {
+				if (resp.error) {
+					toastr.error(resp.error.message);
 					return
 				}
-				userInfo = data.data
-				console.log(userInfo)
+
+				userInfo = resp.data.member
+				jwt = resp.data.jwt
+
+				console.log(resp)
 				uiRegisteredSection_show()
 			})
 
@@ -193,42 +238,6 @@ function uiRestoreSection_restore() {
 }
 
 
-function postJsonRpc(method, params) {
-
-	const address = store.get('bc-address')
-
-	const nonce = + new Date()			
-	const paramsWithNonce = params.concat(method).concat(nonce)
-	const encoded = rlp.encode(paramsWithNonce);
-
-	const sig = lightwallet.signing.signMsg(
-		keyStore, pwDerivedKey, encoded, address
-	)
-	const sighex = 
-		Buffer.from(sig.r).toString('hex')+
-		Buffer.from(sig.s).toString('hex')+
-		Buffer.from(new Uint8Array([sig.v])).toString('hex')
-
-	const msg = {
-		"jsonrpc": "2.0",
-		"method": method,
-		"params": params.concat(address).concat(sighex),
-		"id": nonce
-	}
-
-	console.log(JSON.stringify(msg))
-
-	return $.ajax({
-    	url: '/rpc',
-    	type: 'POST',
-    	contentType: 'application/json',
-    	dataType: 'json',
-    	data: JSON.stringify(msg)
-	}).fail((err) => {
-		toastr.error("Error conectant amb el servidor")
-		console.log(err)
-	})
-}
 
 function uiCreateSection_create() {
 
@@ -279,22 +288,26 @@ function uiCreateSection_create() {
 		    ks.generateNewAddress(pwDerivedKey, 1);
 		    const address = "0x"+ks.getAddresses()[0]
 
+		    store.set('bc-address' , address)
+		    store.set('bc-pvk' , ks.serialize())
+		    store.set('bc-backupdone' , false)
 
 			/// --- sign proof of posession
 
-			postJsonRpc(
+			postSignedJsonRpc(
 				"bc_register",
 				[firstName,secondName,email,mode,interest,captcha]
-			).done((data) => {
+			).done((resp) => {
 				
-				if (data.error) {
-					toastr.error(data.error.message);
+				if (resp.error) {
+
+					store.remove('bc-address')
+					store.remove('bc-pvk')
+					store.remove('bc-backupdone')
+
+					toastr.error(resp.error.message);
 					return
 				}
-
-			    store.set('bc-address' , address)
-			    store.set('bc-pvk' , ks.serialize())
-			    store.set('bc-backupdone' , false)
 
 				$("#passwd1").val("")
 				$("#passwd2").val("")
@@ -307,19 +320,8 @@ function uiCreateSection_create() {
 
 				uiMainSection_show()
 			})
-/*						
-			ks.passwordProvider = function (callback) {
-      			var pw = prompt("Please enter password", "Password");
-      		    callback(null, pw);
-    		};
-*/
-
 	  });
 	});
-}
-
-function uiCreateSection_correctCaptcha(response) {
-	alert(response)
 }
 
 window.addEventListener('load', function() {

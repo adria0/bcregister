@@ -34,6 +34,11 @@ type OutMsg struct {
 
 var (
 
+	ErrInternal = &ErrorMsg{
+		Code:    999,
+		Message: "Error intern",
+	}
+
 	errBadMsgFormat = &ErrorMsg{
 		Code : 10001,
 		Message : "Bad message format",
@@ -44,15 +49,22 @@ var (
 		Message : "Bad signature",
 	}
 
-	dispatcher func (c *gin.Context, address, method string, args []interface{}) (interface{},*ErrorMsg)
+	errUnknownMethod = &ErrorMsg{
+		Code:    10003,
+		Message: "Unknown method",
+	}
+
+	handles map[string]Handler = make(map[string]Handler)
 )
 
-func verifyMsg(in InMsg) ([]interface{}, string,error) {
+type Handler func (*gin.Context, string,[]interface{})(interface{},*ErrorMsg)
 
-	args := in.Params[:len(in.Params)-2]
-	address := in.Params[len(in.Params)-2].(string)
+func verifyMsg(in InMsg, signature string) ([]interface{}, string,error) {
 
-	sig,err := hex.DecodeString(in.Params[len(in.Params)-1].(string))
+	args := in.Params[:len(in.Params)-1]
+	address := in.Params[len(in.Params)-1].(string)
+
+	sig,err := hex.DecodeString(signature)
 	if err != nil {
 		return nil,"",err
 	}
@@ -72,19 +84,29 @@ func verifyMsg(in InMsg) ([]interface{}, string,error) {
 	sigAddress := common.BytesToAddress(common.LeftPadBytes(crypto.Keccak256(pubKey[1:])[12:], 32))
 	sigAddressStr := strings.ToLower(sigAddress.String())
 	if sigAddressStr != address {
-		return nil,"",fmt.Errorf("Signature mismatch")
+		return nil,"",fmt.Errorf("Signature mismatch [expected="+address+" got="+sigAddressStr+"]")
 	}
 
 	return args,address,nil
 }
 
-func SetDispatcher(d func (c *gin.Context, address, method string, args []interface{}) (interface{},*ErrorMsg)) {
-	dispatcher = d
+func Register(method string, h Handler) {
+	handles[method] = h
 }
 
-func Handle(
-	c *gin.Context,
-	) {
+func Handle(c *gin.Context) {
+
+	header := c.GetHeader("Authorization")
+	auth := strings.Split(header," ")
+	if len(auth) != 2 {
+		log.Printf("Bad authentication header (1) ["+header+"]")
+		return
+	}
+
+	if auth[0] != "Signature" {
+		log.Printf("Bad authentication header (2)["+header+"]")
+		return
+	}
 
 	var err error
 	var in InMsg
@@ -101,15 +123,22 @@ func Handle(
 	err = dec.Decode(&in)
 
 	if err == nil {
-		var address string
-		var args []interface{}
 
-		args,address,err = verifyMsg(in)
+		if handle, found := handles[in.Method] ; found {
 
-		if err == nil {
-			retvalue, rpcErr = dispatcher(c,address,in.Method,args)
+			var address string
+			var args []interface{}
+
+			args,address,err = verifyMsg(in,auth[1])
+
+			if err == nil {
+				retvalue, rpcErr = handle(c,address,args)
+			} else {
+				rpcErr = errBadSignature
+			}
+
 		} else {
-			rpcErr = errBadSignature
+			rpcErr = errUnknownMethod
 		}
 
 	} else {
@@ -132,7 +161,4 @@ func Handle(
 	} else {
 		log.Printf("%#v => %#v\n",in,out)
 	}
-
 }
-
-

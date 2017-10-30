@@ -11,7 +11,7 @@ import (
 )
 
 func AuthCode(address, email string) string {
-	mac := hmac.New(sha256.New, []byte(config.C.EmailAuthCode))
+	mac := hmac.New(sha256.New, []byte(config.C.ServerSecret))
 	mac.Write([]byte(address))
 	mac.Write([]byte(email))
 	sum := mac.Sum(nil)
@@ -49,6 +49,6 @@ func SendAuthEmail(address, email string) error {
 
 	e.HTML = []byte(msg)
 
-	return e.Send(config.C.SmtpClient.Server,auth)
+	return e.SendWithTLS(config.C.SmtpClient.Server,auth,nil)
 }
 

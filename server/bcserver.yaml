@@ -5,7 +5,7 @@ WebServer :
   CertFile : deploy/config/server.crt
   KeyFile : deploy/config/server.key
 DataFolder : deploy/data
-EmailAuthCode : D354151CE23AF56154AE7BB313683
+ServerSecret : D354151CE23AF56154AE7BB313683
 SmtpClient :
   From : adria@blockchaincatalunya.org
   Domain : authsmtp.blockchaincatalunya.org

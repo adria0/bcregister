@@ -7,7 +7,7 @@ import (
 
 type Config struct {
 	DataFolder string
-	EmailAuthCode string
+	ServerSecret string
 	Recaptcha struct {
 		Code string
 		Key string
