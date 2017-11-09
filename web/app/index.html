@@ -14,6 +14,14 @@
        <script src='https://www.google.com/recaptcha/api.js'></script>
    </head>
    <body>
+
+	  <div id="spinner" style="display:none" class="centered">
+	  	<div class="la-ball-scale-pulse la-3x">
+	  		<div></div>
+	  		<div></div>
+	  	</div>
+	  </div>
+
       <div class="container">
 
         <!-- header ==============================  -->
@@ -24,6 +32,30 @@
         </div>
 
         <!-- sections ==============================  -->
+
+      	 <div id="registeredsection" style="display:none">      	 	
+	        <div class="row">
+	           <div class="twelf columns">
+	               <h2>Area privada</h2>
+	           </div>
+	        </div>
+	        <div class="row">
+	           <div class="twelf columns">
+	           	  <b><span id=emailreg></b>
+	           	  <span id=addressreg></span>
+	           	  <input class="button" type="button" value="Les vostes dades" id="ui_registered_userinfo"><br>           	  
+
+  		          <input class="button" type="button" value="Consulteu tokens" id="ui_registered_viewtokens"><br>           	  
+	           </div>
+	        </div>
+	        <div class="row" style="display:none" id="backupdiv">
+	           <div class="twelf columns">
+	           	  Atenció! Cal que feu una copia de seguretat de les claus. Feu click al botó per descarregar l'arxiu de copia de seguretat. Deseu aquest arxiu a un lloc segur.<br><br>
+	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="ui_backup_backup">
+	           </div>
+	        </div>	        
+      	 </div>
+
       	 <div id="mainsection" style="display:none">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
@@ -33,8 +65,8 @@
 	        </div>
 	        <div class="row">
 	           <div class="twelf columns">
-	              <input class="button-primary" type="button" value="Crear nova" id="uiCreateSection_show">
-	              <input class="button-primary" type="button" value="Recuperar" id="uiRestoreSection_show">
+	              <input class="button-primary" type="button" value="Crear nova" id="ui_create_show">
+	              <input class="button-primary" type="button" value="Recuperar" id="ui_restore_show">
 	           </div>
 	        </div>	        
       	 </div>
@@ -53,27 +85,7 @@
 	       </div>
 	        <div class="row">
 	           <div class="twelf columns">
-	              <input class="button-primary" type="button" value="Accedir >" id="uiAuthSection_auth">
-	           </div>
-	        </div>	        
-      	 </div>
-
-      	 <div id="registeredsection" style="display:none">      	 	
-	        <div class="row">
-	           <div class="twelf columns">
-	               <h2>Area privada</h2>
-	           </div>
-	        </div>
-	        <div class="row">
-	           <div class="twelf columns">
-	           	  <b><span id=emailreg></b>
-	           	  <span id=addressreg></span>
-	           </div>
-	        </div>
-	        <div class="row" style="display:none" id="backupdiv">
-	           <div class="twelf columns">
-	           	  Atenció! Cal que feu una copia de seguretat de les claus. Feu click al botó per descarregar l'arxiu de copia de seguretat. Deseu aquest arxiu a un lloc segur.<br><br>
-	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="uiBackupSection_backup">
+	              <input class="button-primary" type="button" value="Accedir >" id="ui_auth_auth">
 	           </div>
 	        </div>	        
       	 </div>
@@ -98,8 +110,8 @@
 	       </div>
 	        <div class="row">
 	           <div class="twelf columns">
-	           	  <input class="button-primary" type="button" value="&lt;" id="uiRestoreSection_back">
-	              <input class="button-primary" type="button" value="Recuperar >" id="uiRestoreSection_restore">
+	           	  <input class="button-primary" type="button" value="&lt;" id="ui_restore_back">
+	              <input class="button-primary" type="button" value="Recuperar >" id="ui_restore_restore">
 	           </div>
 	        </div>	        
       	 </div>
@@ -120,7 +132,7 @@
 		        </div>
 		        <div class="row">
 		           <div class="twelf columns">
-		              <label for="secondname">Cogonms</label>
+		              <label for="secondname">Cognoms</label>
 		              <input class="u-full-width" type="text" id="secondname">
 		           </div>
 		       </div>
@@ -166,8 +178,8 @@
 		        <div class="row">
 		           <div class="twelf columns">
 			          <br><br>
-  		              <input class="button-primary" type="button" value="&lt;" id="uiCreateSection_back">
-		              <input class="button-primary" type="button" value="Registrar identitat >" id="uiCreateSection_create">
+  		              <input class="button-primary" type="button" value="&lt;" id="ui_create_back">
+		              <input class="button-primary" type="button" value="Registrar identitat >" id="ui_create_create">
 		           </div>
 		        </div>
 		     </form>

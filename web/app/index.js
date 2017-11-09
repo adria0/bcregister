@@ -8,6 +8,7 @@ import { default as rlp } from 'rlp';
 import { default as web3 } from 'web3';
 
 import './/../node_modules/toastr/build/toastr.css';
+import './/../node_modules/load-awesome/css/ball-scale-pulse.css';
 
 const ERC20ABI = '[{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"totalSupply","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"}],"name":"balanceOf","outputs":[{"name":"balance","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_owner","type":"address"},{"name":"_spender","type":"address"}],"name":"allowance","outputs":[{"name":"remaining","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_from","type":"address"},{"indexed":true,"name":"_to","type":"address"},{"indexed":false,"name":"_value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"_owner","type":"address"},{"indexed":true,"name":"_spender","type":"address"},{"indexed":false,"name":"lue","type":"uint256"}],"name":"Approval","type":"event"}]'
 
@@ -24,8 +25,8 @@ function updateJwt(_jwt) {
 function postSignedJsonRpc(method, params) {
 
 	const address = store.get('bc-address')
-
 	const nonce = + new Date()			
+
 	const paramsWithNonce = params.concat(method).concat(nonce)
 	const encoded = rlp.encode(paramsWithNonce);
 
@@ -44,6 +45,7 @@ function postSignedJsonRpc(method, params) {
 		"id"      : nonce
 	}
 
+	showWaiting(true)
 	return $.ajax({
     	url: '/rpc',
     	type: 'POST',
@@ -53,10 +55,21 @@ function postSignedJsonRpc(method, params) {
     	beforeSend: function(request) {
     		request.setRequestHeader("Authorization","Signature "+sighex);
   		},
-	}).fail((err) => {
+  		complete : function() {
+  			showWaiting(false)
+  		}
+	}).fail((err) => {		
 		toastr.error("Error conectant amb el servidor")
 		console.log(err)
 	})
+}
+
+function showWaiting(visible) {
+	if (visible) {
+		$('#spinner').show()
+	} else {
+		$('#spinner').hide()		
+	}
 }
 
 function showSection(section) {
@@ -79,32 +92,29 @@ function showSection(section) {
 
 }
 
-function uiMainSection_show() {
+function ui_main_show() {
 
 	if (store.get('bc-address') === undefined) {
 		showSection('#mainsection')
 	} else {
 		if (userInfo == null) {
-			uiAuthSection_show()
+			ui_auth_show()
 		} else {
-			uiRegisteredSection_show()
+			ui_registered_show()
 		}
 	}
 }
 
-function uiCreateSection_show() {
-
+function ui_create_show() {
 	showSection('#createsection')
 
 }
 
-function uiRestoreSection_show() {
-
+function ui_restore_show() {
 	showSection('#restoresection')
-
 }
 
-function uiAuthSection_show() {
+function ui_auth_show() {
 
 	const address = store.get('bc-address')
 	const link = "<a href='https://etherscan.io/address/"+address+"'>"+address+"</a>"
@@ -114,17 +124,12 @@ function uiAuthSection_show() {
 	
 }
 
-function uiRegisteredSection_show() {
+function ui_registered_show() {
 
 	showSection('#registeredsection')
 	console.log("userInfo",userInfo)
 	
-	let info = userInfo.firstName+" "+userInfo.secondName+"<br>"+userInfo.email
-
-	if (userInfo.emailVerified) {
-		info += " (Verificat)"
-	} else {
-		info += " (No verificat)"
+	if (!userInfo.emailVerified) {
 		toastr.error("Consulteu el correu per verificar l'email");
 	}
 
@@ -132,14 +137,26 @@ function uiRegisteredSection_show() {
 		$('#backupdiv').show()
 	}
 
-	$('#emailreg').html(info+"<br>")
-
-	const address = store.get('bc-address')
-	const link = "<a href='https://etherscan.io/address/"+address+"'>"+address+"</a>"
-
 }
 
-function uiAuthSection_auth() {
+function ui_registered_userinfo() {
+
+	let info = userInfo.firstName+" "+userInfo.secondName+"<br>"+userInfo.email
+
+	if (userInfo.emailVerified) {
+		info += " (Verificat)"
+	} else {
+		info += " (No verificat)"
+	}
+
+	const address = store.get('bc-address')
+	info += "<br>ID ethereum: <a href='https://etherscan.io/address/"+address+"'>"+address+"</a>"
+
+	toastr.info(info)
+}
+
+
+function ui_auth_auth() {
 
 	const authpasswd = $("#authpasswd").val()
 	const ks = lightwallet.keystore.deserialize(store.get('bc-pvk'))
@@ -164,7 +181,7 @@ function uiAuthSection_auth() {
 			userInfo = resp.data.member
 			updateJwt(resp.data.jwt)
 
-			uiRegisteredSection_show()
+			ui_registered_show()
 		})
 	})
 
@@ -177,11 +194,11 @@ function unlinkid() {
 		store.remove('bc-pvk')
 		store.remove('bc-backupdone')		
 		userInfo = null
-		uiMainSection_show()
+		ui_main_show()
 	}
 }
 
-function uiBackupSection_backup() {
+function ui_backup_backup() {
 	const pvk = store.get('bc-pvk')
 	var blob = new Blob([pvk], {type: "text/json;charset=utf-8"});
 	filesaver.saveAs(blob, "bc_identity.json");
@@ -190,16 +207,17 @@ function uiBackupSection_backup() {
 
 }
 
-function uiRestoreSection_restore() {
+function ui_restore_restore() {
 
 	const passwd = $("#restorepasswd").val()
 	const file = $("#restorefile")[0].files[0]
 
 	var reader = new FileReader();
 	reader.onload = function(e) {
+	  showWaiting(true)
 	  const ks = lightwallet.keystore.deserialize(reader.result)
 	  ks.keyFromPassword(passwd, function (err, _pwDerivedKey) {
-
+		showWaiting(false)
 	  	if (ks.isDerivedKeyCorrect(_pwDerivedKey)) {
 
 		    pwDerivedKey = _pwDerivedKey
@@ -225,7 +243,7 @@ function uiRestoreSection_restore() {
 				updateJwt(resp.data.jwt)
 
 				console.log(resp)
-				uiRegisteredSection_show()
+				ui_registered_show()
 			})
 
 	  	} else {
@@ -240,7 +258,7 @@ function uiRestoreSection_restore() {
     reader.readAsText(file);
 }
 
-function uiCreateSection_create() {
+function ui_create_create() {
 
 	const captcha = grecaptcha.getResponse()
 	const firstName = $("#firstname").val()
@@ -275,12 +293,14 @@ function uiCreateSection_create() {
 		toastr.error('Heu de validar que sou humà');
 		return;		
 	}
-
+	showWaiting(true)
     lightwallet.keystore.createVault(
   		{ password: passwd1 },
   		function (err, ks) {
 
 		  ks.keyFromPassword(passwd1, function (err, _pwDerivedKey) {
+			showWaiting(false)
+
 		    if (err) throw err;
 
 		    pwDerivedKey = _pwDerivedKey
@@ -294,12 +314,13 @@ function uiCreateSection_create() {
 		    store.set('bc-backupdone' , false)
 
 			/// --- sign proof of posession
-
+			$('#ui_create_create').prop( "disabled", true );
 			postSignedJsonRpc(
 				"bc_register",
 				[firstName,secondName,email,mode,interest,captcha]
 			).done((resp) => {
-				
+				$('#ui_create_create').prop( "disabled", false );
+
 				if (resp.error) {
 
 					store.remove('bc-address')
@@ -319,7 +340,7 @@ function uiCreateSection_create() {
 					email : email
 				}
 
-				uiMainSection_show()
+				ui_main_show()
 			})
 	  });
 	});
@@ -327,16 +348,17 @@ function uiCreateSection_create() {
 
 window.addEventListener('load', function() {
 
-	$('#uiCreateSection_show').click(() => uiCreateSection_show())
-	$('#uiRestoreSection_show').click(() => uiRestoreSection_show())
-	$('#uiRestoreSection_restore').click(() => uiRestoreSection_restore())
-	$('#uiCreateSection_create').click(() => uiCreateSection_create())
-	$('#uiBackupSection_backup').click(() => uiBackupSection_backup())
-	$('#uiAuthSection_auth').click(() => uiAuthSection_auth())
-	$('#uiRestoreSection_back').click(() => uiMainSection_show());
-	$('#uiCreateSection_back').click(() => uiMainSection_show());
+	$('#ui_create_show').click(() => ui_create_show())
+	$('#ui_restore_show').click(() => ui_restore_show())
+	$('#ui_restore_restore').click(() => ui_restore_restore())
+	$('#ui_create_create').click(() => ui_create_create())
+	$('#ui_backup_backup').click(() => ui_backup_backup())
+	$('#ui_auth_auth').click(() => ui_auth_auth())
+	$('#ui_restore_back').click(() => ui_main_show());
+	$('#ui_create_back').click(() => ui_main_show());
+	$('#ui_registered_userinfo').click(()=>ui_registered_userinfo());
 
-	uiMainSection_show() 
+	ui_main_show() 
 
 	const contract = new web3.eth.Contract(ERC20ABI, "0x9a642d6b3368ddc662CA244bAdf32cDA716005BC")
 	

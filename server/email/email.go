@@ -6,9 +6,39 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/smtp"
-	"net/url"	
+	"net/url"
+	"errors"
 	emailer "github.com/jordan-wright/email"
 )
+type unsecurePlainAuth struct {
+  	identity, username, password string
+  	host                         string
+}
+
+func UnsecurePlainAuth(identity, username, password, host string) smtp.Auth {
+	return &unsecurePlainAuth{identity, username, password, host}
+}
+
+func isLocalhost(name string) bool {
+	return name == "localhost" || name == "127.0.0.1" || name == "::1"
+}
+
+func (a *unsecurePlainAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
+	if server.Name != a.host {
+		return "", nil, errors.New("wrong host name")
+	}
+	resp := []byte(a.identity + "\x00" + a.username + "\x00" + a.password)
+	return "PLAIN", resp, nil
+}
+
+func (a *unsecurePlainAuth) Next(fromServer []byte, more bool) ([]byte, error) {
+	if more {
+		// We've already sent everything.
+		return nil, errors.New("unexpected server challenge")
+	}
+	return nil, nil
+}
+
 
 func AuthCode(address, email string) string {
 	mac := hmac.New(sha256.New, []byte(config.C.ServerSecret))
@@ -18,9 +48,10 @@ func AuthCode(address, email string) string {
 	return hex.EncodeToString(sum)
 }
 
+
 func SendAuthEmail(address, email string) error {
 
-	auth := smtp.PlainAuth(
+	auth := UnsecurePlainAuth(
 		"",
 		config.C.SmtpClient.User,
 		config.C.SmtpClient.Password,

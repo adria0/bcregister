@@ -76,13 +76,11 @@ func jsonRpcRegister(c *gin.Context, address string, args []interface{}) (interf
 		log.Print("*err db-add", err)
 		return nil, jsonrpc.ErrInternal
 	}
-	/*
 	err = email.SendAuthEmail(address, useremail)
 	if err != nil {
 		log.Print("*err db-sendmail", err)
-		return nil, errInternalError
+		return nil, jsonrpc.ErrInternal
 	}
-	*/
 	token,err := auth.JwtCreateToken(address)
 	if err != nil {
 		log.Print("*err db-createtoken", err)

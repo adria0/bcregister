@@ -53,3 +53,5 @@ func Read(address string) (*Member,error) {
 
 	return &member, nil
 }
+
+

@@ -5,29 +5,28 @@ import "./Owned.sol";
 contract CourseToken is Owned {
 
     struct Token {
-        address owner;
-        uint128 serial;
-        string  class;
-        uint64  caducity;
-        uint64  ownerIndex;
+        address owner;       // owner of the object
+        uint128 serial;      // serial number of the object
+        uint64  creation;    // unix creation time
+        string  description; // description
+        uint256 ipfs;        // the keccak256 hash of the object for ipfs
+        uint64  ownerIndex;   
     }
     
-    Token[] public tokens;
+    Token[]                   public tokens;
     mapping(address=>Token[]) public tokenOwners;
     mapping(address=>uint)    public nonces;
     
-    function mint(address _owner,string _class, uint64 _caducity)
+    function mint(address _owner, uint256 _ipfshash)
     onlyOwner public {
-        require ( _caducity == 0 || _caducity > uint64(now));
-
         Token[] storage tokenOwner = tokenOwners[_owner];
         uint128 serial = uint128(tokens.length);
 
         tokens.push(Token({
             owner      : _owner,
             serial     : serial,
-            class      : _class,
-            caducity   : _caducity,
+            creation   : uint64(now),
+            ipfs       : _ipfshash,
             ownerIndex : uint64(tokenOwner.length)
         }));
         
@@ -40,11 +39,11 @@ contract CourseToken is Owned {
     
     function transfer(uint _serial, address _to, uint64 _nonce, uint8 _v, bytes32 _r, bytes32 _s) public {
         
-        bytes32 hash = keccak256("bc_coursetoken_transfer",address(this),_serial,_to, _nonce);
+        bytes32 hash = keccak256(msg.sig,address(this),_nonce,_serial,_to, _nonce);
         address from = ecrecover(hash,_v,_r,_s);
         
         require(from != 0x0);
-        require(nonces[from] < _nonce);
+        require(_nonce > nonces[from]);
         
         nonces[from] = _nonce;
         
