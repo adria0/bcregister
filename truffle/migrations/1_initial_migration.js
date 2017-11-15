@@ -1,4 +1,4 @@
-var Migrations = artifacts.require("./truffle/Migrations.sol");
+var Migrations = artifacts.require("./Migrations.sol");
 
 module.exports = function(deployer) {
   deployer.deploy(Migrations);
