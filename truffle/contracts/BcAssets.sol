@@ -14,6 +14,7 @@ contract BcAssets is Owned {
         address owner;       // owner of the object
         uint128 serial;      // serial number of the object
         uint64  creation;    // unix creation time
+        uint64  caducity;    // unix caducity time
         string  description; // description
         uint256 ipfs;        // the keccak256 hash of the object for ipfs
         uint64  ownerIndex;   
@@ -47,6 +48,13 @@ contract BcAssets is Owned {
 
         return serial;
     }
+
+    function burn(uint _serial)
+    public returns (uint){
+        require ( assets[_serial].owner == _from );
+
+    }
+
     
     function transfer(uint _serial, address _to) public {
         transferInternal(_serial,msg.sender,_to);
