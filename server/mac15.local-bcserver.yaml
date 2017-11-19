@@ -1,5 +1,5 @@
 WebServer :
-  WwwRoot : /Users/amb/Feina/bc/register/web/dist
+  WwwRoot : /Users/amb/Feina/bc/bcregister/web/dist/
   Prefix : https://localhost:8443
   Bind : "0.0.0.0:8443"
   CertFile : deploy/config/server.crt

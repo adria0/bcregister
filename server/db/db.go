@@ -4,6 +4,8 @@ import(
 	"github.com/adriamb/bcdapp/config"
 	"encoding/json"
 	"io/ioutil"
+	"os"
+	"log"
 )
 
 type Member struct {
@@ -16,6 +18,16 @@ type Member struct {
 	EmailVerified bool `json:"emailVerified"`
 }
 
+func init() {
+
+	if _, err := os.Stat(config.C.DataFolder); os.IsNotExist(err) {
+	    if err = os.MkdirAll(config.C.DataFolder, 0744) ; err != nil {
+	    	log.Fatal(err)
+	    }
+	}
+
+}
+
 func Add(member *Member) error {
 
 	serialized, err := json.Marshal(member)
@@ -24,7 +36,7 @@ func Add(member *Member) error {
 		return err
 	}
 
-	return ioutil.WriteFile(config.C.DataFolder+"/member-"+member.Address,serialized,0666)	
+	return ioutil.WriteFile(config.C.DataFolder+"/member-"+member.Address,serialized,0744)	
 }
 
 func Update(member *Member) error {
@@ -35,7 +47,7 @@ func Update(member *Member) error {
 		return err
 	}
 
-	return ioutil.WriteFile(config.C.DataFolder+"/member-"+member.Address,serialized,0666)	
+	return ioutil.WriteFile(config.C.DataFolder+"/member-"+member.Address,serialized,0744)	
 }
 
 func Read(address string) (*Member,error) {

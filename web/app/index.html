@@ -7,15 +7,11 @@
 
 	   <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
 
-       <link rel="stylesheet" href="css/skeleton.css">
-       <link rel="stylesheet" href="css/normalize.css">
-       <link rel="stylesheet" href="css/app.css">
-
        <script src='https://www.google.com/recaptcha/api.js'></script>
    </head>
-   <body>
+   <body style="display:none">
 
-	  <div id="spinner" style="display:none" class="centered">
+	  <div id="spinner" class="centered hide">
 	  	<div class="la-ball-scale-pulse la-3x">
 	  		<div></div>
 	  		<div></div>
@@ -33,7 +29,7 @@
 
         <!-- sections ==============================  -->
 
-      	 <div id="registeredsection" style="display:none">      	 	
+      	 <div class="section section-registered hide">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
 	               <h2>Area privada</h2>
@@ -48,7 +44,7 @@
   		          <input class="button" type="button" value="Consulteu tokens" id="ui_registered_viewtokens"><br>           	  
 	           </div>
 	        </div>
-	        <div class="row" style="display:none" id="backupdiv">
+	        <div class="row hide" id="backupdiv">
 	           <div class="twelf columns">
 	           	  Atenció! Cal que feu una copia de seguretat de les claus. Feu click al botó per descarregar l'arxiu de copia de seguretat. Deseu aquest arxiu a un lloc segur.<br><br>
 	              <input class="button-primary" type="button" value="Descarregar copia seguretat" id="ui_backup_backup">
@@ -56,7 +52,7 @@
 	        </div>	        
       	 </div>
 
-      	 <div id="mainsection" style="display:none">      	 	
+      	 <div class="section section-main hide">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
 	               <h2>Benvingut</h2>
@@ -71,7 +67,7 @@
 	        </div>	        
       	 </div>
 
-      	 <div id="authsection" style="display:none">      	 	
+      	 <div class="section section-auth hide">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
 	               <h2>Accedir</h2>
@@ -90,7 +86,7 @@
 	        </div>	        
       	 </div>
 
-      	 <div id="restoresection" style="display:none">      	 	
+      	 <div class="section section-restore hide">      	 	
 	        <div class="row">
 	           <div class="twelf columns">
 	               <h2>Restaurar identitat</h2>
@@ -116,7 +112,7 @@
 	        </div>	        
       	 </div>
          
-         <div id="createsection" style="display:none" >
+         <div class="section section-create hide" >
 		     <form>
 		        <div class="row">
 		           <div class="twelf columns">
@@ -127,19 +123,19 @@
 		        <div class="row">
 		           <div class="twelf columns">
 		              <label for="firstname">Nom</label>
-		              <input class="u-full-width" type="text" id="firstname">
+		              <input class="u-full-width" type="text" id="firstname" value="adria">
 		           </div>
 		        </div>
 		        <div class="row">
 		           <div class="twelf columns">
 		              <label for="secondname">Cognoms</label>
-		              <input class="u-full-width" type="text" id="secondname">
+		              <input class="u-full-width" type="text" id="secondname" value="massanet">
 		           </div>
 		       </div>
 		        <div class="row">
 		           <div class="twelf columns">
 		              <label for="email">Email</label>
-		              <input class="u-full-width" type="email" id="email">
+		              <input class="u-full-width" type="email" id="email" value="adria@codecontext.io">
 		           </div>
 		        </div>
 		        <div class="row">
@@ -162,13 +158,13 @@
 		        <div class="row">
 		           <div class="twelf columns">
 		              <label for="passwd1">Contrassenya</label>
-		              <input class="u-full-width" type="password" id="passwd1">
+		              <input class="u-full-width" type="password" id="passwd1" value="111111">
 		           </div>
 		       </div>
 		        <div class="row">
 		           <div class="twelf columns">
 		              <label for="passwd2">Confirmeu contrassenya</label>
-		              <input class="u-full-width" type="password" id="passwd2">
+		              <input class="u-full-width" type="password" id="passwd2" value="111111">
 		           </div>
 		       </div>
 		        <div class="row">
@@ -188,7 +184,7 @@
 	      <!-- footer ==============================  -->
           <div class="row">
              <div class="twelf columns">
-               <span id="footer">
+               <span id="footer"></span>
             </div>
           </div>
 

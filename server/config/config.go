@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/spf13/viper"
 	"log"
+	"os"
 )
 
 type Config struct {
@@ -32,17 +33,23 @@ type Config struct {
 var C Config
 
 func init() {
+
+	name, err := os.Hostname()
+	if err != nil {
+		panic(err)
+	}
+
 	viper.SetConfigType("yaml")
-	viper.SetConfigName("bcserver")
+	viper.SetConfigName(name+"-bcserver")
 	viper.AddConfigPath(".")
 	viper.SetEnvPrefix("BCSERVER") 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err != nil {
+	if err = viper.ReadInConfig(); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := viper.Unmarshal(&C); err != nil {
+	if err = viper.Unmarshal(&C); err != nil {
 		log.Fatal(err)
 	}
 }
