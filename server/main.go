@@ -123,8 +123,12 @@ func web3proxy(c *gin.Context) {
 		return
 	}
 
+	if config.C.Web3Proxy.Trace {
+		log.Printf("web3 IN %v",string(inraw))
+	}
+
   	client := http.Client{}
-    req, err := http.NewRequest("POST", config.C.Web3Url, bytes.NewBuffer(inraw))
+    req, err := http.NewRequest("POST", config.C.Web3Proxy.RpcServerUrl, bytes.NewBuffer(inraw))
     resp, err := client.Do(req)
     if err != nil {
 		log.Printf("Failed reading request body",err)
@@ -132,6 +136,10 @@ func web3proxy(c *gin.Context) {
         return
     }
     outraw, _ := ioutil.ReadAll(resp.Body)
+
+	if config.C.Web3Proxy.Trace {
+		log.Printf("web3 OUT %v",string(outraw))
+	}
 
     c.String(200,string(outraw))
 
@@ -161,6 +169,20 @@ func GETVerifyEmail(c *gin.Context) {
 
 }
 
+type FrontendConfig struct {
+	AssetsContractAddress  string `json:"assetsContractAddress"`
+}
+
+func GETConfig(c *gin.Context) {
+
+	cfg := &FrontendConfig{
+		AssetsContractAddress : config.C.Smartcontracts.AssetsAddress,
+	}
+
+	c.JSON(200, cfg)
+}
+
+
 func main() {
 
 	r := gin.Default()
@@ -169,7 +191,7 @@ func main() {
 	r.POST("/web3", web3proxy)
 
 	// www
-	r.Static("/r", config.C.WebServer.WwwRoot)
+	r.Static("/dapp", config.C.WebServer.WwwRoot)
 
 	jsonrpc.Register("bc_register",jsonRpcRegister)
 	jsonrpc.Register("bc_auth",jsonRpcAuth)
@@ -177,6 +199,7 @@ func main() {
 
 	// internal calls
 	r.GET("/emailreg", GETVerifyEmail)
+	r.GET("/config", GETConfig)
 
 	r.RunTLS(config.C.WebServer.Bind, config.C.WebServer.CertFile, config.C.WebServer.KeyFile)
 	

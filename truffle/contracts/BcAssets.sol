@@ -2,6 +2,11 @@ pragma solidity ^0.4.15;
 
 import "./Owned.sol";
 
+interface IBcAssetFallback {
+    function isBcAssetFallback() returns (uint);
+    function onBcAssetFallback(uint _serial);
+}
+
 contract BcAssets is Owned {
 
     /// --- events --------------------------------------------------
@@ -11,13 +16,20 @@ contract BcAssets is Owned {
     /// --- structures ----------------------------------------------
 
     struct Asset {
-        address owner;       // owner of the object
-        uint128 serial;      // serial number of the object
-        uint64  creation;    // unix creation time
-        uint64  caducity;    // unix caducity time
-        string  description; // description
-        uint256 ipfs;        // the keccak256 hash of the object for ipfs
-        uint64  ownerIndex;   
+        address owner;         // owner of the object
+
+        uint128 serial;        // serial number of the object
+        uint64  class;         // class of object , 1 == membership
+        bool    transferable;  // can be transfered
+
+        uint64  caducity;      // unix caducity time        
+        string  description;   // description
+
+        uint256 customAttr1;
+        uint256 customAttr2;
+
+        uint64  ownerIndex;
+        
     }
     
     /// --- state mutable variables --------------------------------
@@ -28,18 +40,21 @@ contract BcAssets is Owned {
 
     /// --- public functions ---------------------------------------
     
-    function mint(address _owner, string _description, uint256 _ipfshash)
+    function mint(address _owner, uint16 _class, bool _transferable, uint64 _caducity, string _description)
     onlyOwner public returns (uint){
         Asset[] storage assetOwner = assetOwners[_owner];
         uint128 serial = uint128(assets.length);
 
         assets.push(Asset({
-            owner       : _owner,
-            serial      : serial,
-            creation    : uint64(now),
-            ipfs        : _ipfshash,
-            ownerIndex  : uint64(assetOwner.length),
-            description : _description
+            owner         : _owner,
+            serial        : serial,
+            class         : _class,
+            transferable  : _transferable,
+            caducity      : _caducity,
+            description   : _description,
+            customAttr1   : 0,
+            customAttr2   : 0,
+            ownerIndex    : uint64(assetOwner.length)
         }));
         
         assetOwners[_owner].push(assets[serial]);
@@ -49,15 +64,32 @@ contract BcAssets is Owned {
         return serial;
     }
 
-    function burn(uint _serial)
+    function burn(uint _serial) 
     public returns (uint){
-        require ( assets[_serial].owner == _from );
+        require (
+            msg.sender == assets[_serial].owner
+            || msg.sender == owner
+        );
+        transferInternal(_serial,assets[_serial].owner,0xdead);
+    }
+    
+    function transfer(uint _serial, address _to, bool _notify) public {
+        transferInternal(_serial,msg.sender,_to);
 
+        if (_notify && IBcAssetFallback(_to).isBcAssetFallback()
+            == 0x5ff3af2a56b585d12453d7073276716a9a19e813ee0e5ef2e8996ca10985f0f4) {
+            IBcAssetFallback(_to).onBcAssetFallback(_serial);
+        }
+    }
+    
+    function setCustomAttr1(uint _serial, uint256 _value) public {
+        require(msg.sender == assets[_serial].owner);
+        assets[_serial].customAttr1 = _value;
     }
 
-    
-    function transfer(uint _serial, address _to) public {
-        transferInternal(_serial,msg.sender,_to);
+    function setCustomAttr2(uint _serial, uint256 _value) public {
+        require(msg.sender == owner);
+        assets[_serial].customAttr2 = _value;
     }
     
     function transferOffchain(uint _serial, address _to, uint64 _nonce, uint8 _v, bytes32 _r, bytes32 _s) public {
@@ -77,6 +109,10 @@ contract BcAssets is Owned {
 
     function assetCount() public view returns (uint) {
         return assets.length;
+    }
+
+    function ownerAssetCount(address _addr) public view returns (uint) {
+        return assetOwners[_addr].length;
     }
 
     /// --- internal functions --------------------------------------
@@ -103,3 +139,5 @@ contract BcAssets is Owned {
     }
     
 }
+
+

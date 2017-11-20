@@ -1,6 +1,6 @@
 import store from 'store';
 
-export default class config {
+export default class localprofile {
 
 	static reset() {
 		store.remove('bc-address')

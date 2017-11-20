@@ -8,9 +8,9 @@ const CleanWebpackPlugin = require('clean-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const JavaScriptObfuscator = require('webpack-obfuscator');
 
 module.exports = {
-  devtool: 'eval-cheap-module-source-map',  
   entry: [
     conf.src + '/index.js'
   ],
@@ -78,6 +78,9 @@ module.exports = {
                   comments: false
               }
           }
-      })      
+      }),
+      new JavaScriptObfuscator ({
+         rotateUnicodeArray: true
+      }, [])            
   ]
 };

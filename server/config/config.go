@@ -9,7 +9,6 @@ import (
 type Config struct {
 	DataFolder string
 	ServerSecret string
-	Web3Url string
 	Recaptcha struct {
 		Code string
 		Key string
@@ -28,6 +27,14 @@ type Config struct {
 		Password string
 		Domain string
 	}
+	Web3Proxy struct {
+		RpcServerUrl string
+		Trace bool
+	}
+	Smartcontracts struct {
+		AssetsAddress string
+	}
+
 }
 
 var C Config

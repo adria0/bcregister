@@ -3,6 +3,7 @@ import filesaver from 'file-saver';
 import validator from 'validator';
 import toastr from 'toastr';
 import bc from './bc';
+import dateformat from 'dateformat';
 
 import './style.scss';
 
@@ -22,8 +23,13 @@ export default class ui {
 		$('#ui_restore_back').click(() => this.ui_main_show());
 		$('#ui_create_back').click(() => this.ui_main_show());
 		$('#ui_registered_userinfo').click(()=>this.ui_registered_userinfo());
+		$('#ui_registered_viewtokens').click(()=>this.ui_registered_viewtokens());
 
 		this.ui_main_show();
+    }
+
+    async init () {
+    	await this.bc.init()
     }
 
 	showWaiting(visible) {
@@ -39,9 +45,9 @@ export default class ui {
 		$('.section').hide()
 		$(section).show()
 
-		if (!this.bc.conf.initialized) {
+		if (!this.bc.localprofile.initialized) {
 		} else {
-			let html = this.bc.conf.address
+			let html = this.bc.localprofile.address
 			html += " <a href=# id=unlinkid>desvincular</a>"
 			$("#footer").html(html)
 			$('#unlinkid').click(() => this.unlinkid())
@@ -51,7 +57,7 @@ export default class ui {
 
 	ui_main_show() {
 
-		if (!this.bc.conf.initialized) {
+		if (!this.bc.localprofile.initialized) {
 			this.showSection('.section-main')
 		} else {
 			if (this.bc.userInfo == null) {
@@ -72,7 +78,7 @@ export default class ui {
 
 	ui_auth_show() {
 
-		const address = this.bc.conf.address
+		const address = this.bc.localprofile.address
 		const link =  `<a href="https://etherscan.io/address/${address}">${address}</a>`;
 		$('#authaddress').html(link)
 
@@ -89,7 +95,7 @@ export default class ui {
 			toastr.error("Consulteu el correu per verificar l'email");
 		}
 
-		if ( !this.bc.conf.backedup ) {
+		if ( !this.bc.localprofile.backedup ) {
 			$('#backupdiv').show()
 		}
 
@@ -105,7 +111,7 @@ export default class ui {
 			info += " (No verificat)"
 		}
 
-		const address = this.bc.conf.address
+		const address = this.bc.localprofile.address
 		const link =  `<a href="https://etherscan.io/address/${address}">${address}</a>`;
 		info += "<br>ID ethereum: "+link
 
@@ -113,6 +119,24 @@ export default class ui {
 
 	}
 
+	async ui_registered_viewtokens() {
+		const assets = await this.bc.getAssetsInfo()
+		if (assets.length ==0) {
+			toastr.info("No teniu actius registrats")
+			return;	
+		} 
+		let assetsInfo = ''
+		for (let i = 0; i < assets.length; i++) {
+			let assetInfo = `- ${assets[i].description} (num ${assets[i].serial}`
+			if (assets[i].caducity !=0) {
+				assetInfo += ', valid fins el '+
+					dateformat(new Date(assets[i].caducity*1000),"dd/mm/yyyy");
+			}
+			assetInfo+=")<br>"
+			assetsInfo += assetInfo;
+		}		
+		toastr.info(assetsInfo)
+	}
 
 	async ui_auth_auth() {
 
@@ -135,10 +159,10 @@ export default class ui {
 	}
 
 	ui_backup_backup() {
-		const pvk = this.bc.conf.pvk
+		const pvk = this.bc.localprofile.pvk
 		var blob = new Blob([pvk], {type: "text/json;charset=utf-8"});
 		filesaver.saveAs(blob, "bc_identity.json");
-		this.bc.conf.backedup = true
+		this.bc.localprofile.backedup = true
 		$('#backupdiv').hide()
 	}
 

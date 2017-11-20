@@ -15,4 +15,8 @@ SmtpClient :
 Recaptcha :
   Code : 6LcMHDYUAAAAAMoynz5EUzERHShUW2JhnV4eM_U0
   Key : 6LcMHDYUAAAAANXkhm1fPUBKAwQrNAGXY6M3hb07
-Web3Url : http://localhost:8545
+Web3Proxy :
+  RpcServerUrl : http://localhost:18545
+  Trace : true
+Smartcontracts:
+  AssetsAddress : 0xfc8ad0fbac61cda4cccc15a9cc41729b3fe3f2fe
