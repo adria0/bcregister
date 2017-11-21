@@ -1,13 +1,19 @@
 pragma solidity ^0.4.15;
 
-import "./Owned.sol";
+import "./AclControlled.sol";
 
-interface IBcAssetFallback {
-    function isBcAssetFallback() returns (uint);
-    function onBcAssetFallback(uint _serial);
+interface IAssetsFallback {
+    function isAssetsFallback() public returns (uint);
+    function onAssetsFallback(uint _serial) public;
 }
 
-contract BcAssets is Owned {
+/// @title Assets
+/// @author Adrià Massanet <adria@codecontext.io>
+contract Assets is AclControlled {
+
+    /// --- constants -----------------------------------------------
+
+    uint constant public ACL_ASSET = 2;
 
     /// --- events --------------------------------------------------
 
@@ -41,7 +47,7 @@ contract BcAssets is Owned {
     /// --- public functions ---------------------------------------
     
     function mint(address _owner, uint16 _class, bool _transferable, uint64 _caducity, string _description)
-    onlyOwner public returns (uint){
+    onlyAcl(ACL_OWNER|ACL_ASSET) public returns (uint){
         Asset[] storage assetOwner = assetOwners[_owner];
         uint128 serial = uint128(assets.length);
 
@@ -65,34 +71,45 @@ contract BcAssets is Owned {
     }
 
     function burn(uint _serial) 
-    public returns (uint){
+    onlyAcl(ACL_BYPASS) public returns (uint){
+
         require (
             msg.sender == assets[_serial].owner
-            || msg.sender == owner
+            || checkAcl(msg.sender,ACL_OWNER|ACL_ASSET)
         );
         transferInternal(_serial,assets[_serial].owner,0xdead);
+
     }
     
-    function transfer(uint _serial, address _to, bool _notify) public {
+    function transfer(uint _serial, address _to, bool _notify)
+    onlyAcl(ACL_BYPASS) public {
+
         transferInternal(_serial,msg.sender,_to);
 
-        if (_notify && IBcAssetFallback(_to).isBcAssetFallback()
+        if (_notify && IAssetsFallback(_to).isAssetsFallback()
             == 0x5ff3af2a56b585d12453d7073276716a9a19e813ee0e5ef2e8996ca10985f0f4) {
-            IBcAssetFallback(_to).onBcAssetFallback(_serial);
+            IAssetsFallback(_to).onAssetsFallback(_serial);
         }
     }
     
-    function setCustomAttr1(uint _serial, uint256 _value) public {
-        require(msg.sender == assets[_serial].owner);
+    function setCustomAttr1(uint _serial, uint256 _value)
+    onlyAcl(ACL_BYPASS) public {
+
+        require(assets[_serial].owner == msg.sender);
         assets[_serial].customAttr1 = _value;
+
     }
 
-    function setCustomAttr2(uint _serial, uint256 _value) public {
-        require(msg.sender == owner);
+    function setCustomAttr2(uint _serial, uint256 _value)
+    onlyAcl(ACL_OWNER|ACL_ASSET) public {
+
+        require(assets[_serial].owner != 0x0);
         assets[_serial].customAttr2 = _value;
+
     }
     
-    function transferOffchain(uint _serial, address _to, uint64 _nonce, uint8 _v, bytes32 _r, bytes32 _s) public {
+    function transferOffchain(uint _serial, address _to, uint64 _nonce, uint8 _v, bytes32 _r, bytes32 _s)
+    onlyAcl(ACL_BYPASS) public {
         
         bytes32 hash = keccak256(msg.sig,address(this),_nonce,_serial,_to, _nonce);
         address from = ecrecover(hash,_v,_r,_s);
@@ -120,6 +137,7 @@ contract BcAssets is Owned {
     function transferInternal(uint _serial, address _from, address _to) internal {
         require ( _from != _to );
         require ( assets[_serial].owner == _from );
+        require ( assets[_serial].transferable );
 
         Asset[] storage assetOwner = assetOwners[_from];
         
@@ -139,5 +157,3 @@ contract BcAssets is Owned {
     }
     
 }
-
-
