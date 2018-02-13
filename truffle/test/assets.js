@@ -235,7 +235,55 @@ contract("Assets", (accounts) => {
 
     /// ---- offline trasfers
 
+    const uint128hex = v => {
+        return v.toString(16).padStart(32,'0')
+    }
+    const uint64hex = v => {
+        return v.toString(16).padStart(16,'0')
+    }
 
+    const offlineTransfer = (serial, to, acc , nonce, extra ) => {
+
+        const encoded = assets.transferOffchain.request(serial,to,nonce,0,0,0).params[0].data
+        const preimage = assets.address + encoded.slice(2) + extra
+        const hash = web3.sha3(preimage, {encoding: 'hex'})
+
+        const sig = web3.eth.sign(acc, hash).slice(2)
+
+        const r = `0x${sig.slice(0, 64)}`
+        const s = `0x${sig.slice(64, 128)}`
+        const v = web3.toDecimal(sig.slice(128, 130)) + 27
+
+        return assets.transferOffchain(serial, to, nonce, v, r,s)
+
+    }
+
+    it("Transfer with offline signature", async () => {
+        
+        let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
+        const serial = result.logs[ 0 ].args.serial
+        
+        result = await offlineTransfer(serial, acc2, acc1, 1, "");
+        assert.equal(result.logs.length, 1);
+        assert.equal(result.logs[ 0 ].event, "LogTransfer");
+        assert.equal(result.logs[ 0 ].args.serial.toNumber(), serial.toNumber());
+        assert.equal(result.logs[ 0 ].args.from, acc1);
+        assert.equal(result.logs[ 0 ].args.to, acc2);
+
+    });
+
+    it("Cannot transfer with bad offline signature", async () => {
+        
+        let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
+        const serial = result.logs[ 0 ].args.serial
+        
+        try {
+            await await offlineTransfer(serial, acc2, acc1, 1, "00");
+        } catch (error) {
+            return assertFail(error);
+        }
+
+    });
 
 
 });
