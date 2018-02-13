@@ -14,7 +14,7 @@ contract Assets is AclControlled {
     /// --- constants -----------------------------------------------
 
     bytes constant web3SignaturePrefix = "\x19Ethereum Signed Message:\n32";
-    uint constant public ACL_ASSETADMIN = 2;
+    uint constant public ACL_ASSETADMIN = 100;
 
     /// --- events --------------------------------------------------
 
