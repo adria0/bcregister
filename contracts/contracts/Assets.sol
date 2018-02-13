@@ -18,7 +18,7 @@ contract Assets is AclControlled {
 
     /// --- events --------------------------------------------------
 
-    event LogTransfer(uint indexed serial, address from, address to);
+    event LogTransfer(uint serial, address from, address to);
 
     /// --- structures ----------------------------------------------
 
@@ -41,15 +41,15 @@ contract Assets is AclControlled {
     
     /// --- state mutable variables --------------------------------
 
-    Asset[]                   public assets;
-    mapping(address=>Asset[]) public assetOwners;
-    mapping(address=>uint)    public nonces;
+    Asset[]                  public assets;
+    mapping(address=>uint[]) public ownersSerials;
+    mapping(address=>uint)   public nonces;
 
     /// --- public functions ---------------------------------------
     
     function mint(address _owner, uint16 _class, bool _transferable, uint64 _caducity, string _description)
     onlyAcl(ACL_OWNER|ACL_ASSETADMIN) public returns (uint){
-        Asset[] storage assetOwner = assetOwners[_owner];
+
         uint128 serial = uint128(assets.length);
 
         assets.push(Asset({
@@ -61,10 +61,10 @@ contract Assets is AclControlled {
             description   : _description,
             customAttr1   : 0,
             customAttr2   : 0,
-            ownerIndex    : uint64(assetOwner.length)
+            ownerIndex    : uint64(ownersSerials[_owner].length)
         }));
         
-        assetOwners[_owner].push(assets[serial]);
+        ownersSerials[_owner].push(serial);
 
         LogTransfer(serial,0x0,_owner);
 
@@ -123,7 +123,7 @@ contract Assets is AclControlled {
         address from = ecrecover(web3hash,_v,_r,_s);
         
         require(from != 0x0);
-        require(_nonce > nonces[from]);
+        require(_nonce == nonces[from] + 1);
         
         nonces[from] = _nonce;
         
@@ -137,28 +137,37 @@ contract Assets is AclControlled {
     }
 
     function ownerAssetCount(address _addr) public view returns (uint) {
-        return assetOwners[_addr].length;
+        return ownersSerials[_addr].length;
     }
 
     /// --- internal functions --------------------------------------
+
+    event Log(string s, uint v);
 
     function transferInternal(uint128 _serial, address _from, address _to) internal {
         require ( _from != _to );
         require ( assets[_serial].owner == _from );
         require ( assets[_serial].transferable );
 
-        Asset[] storage assetOwner = assetOwners[_from];
-        
-        // safety check if indexes are ok
-        assert(assetOwner[assets[_serial].ownerIndex].serial == _serial);
-        
-        /// update the token owner
-        assetOwner[assets[_serial].ownerIndex] = assetOwner[assetOwner.length-1];
-        assetOwner.length--;
-        assetOwners[_to].push(assets[_serial]);
+        uint64 assetOwnerIndex = assets[_serial].ownerIndex;
 
-        /// update the token
+        // safety check if indexes are ok
+        assert(assets[ownersSerials[_from][assetOwnerIndex]].serial == _serial);
+
+        /// move last asset of _from owner to the transferred asset
+        uint[] storage ownersSerialsFrom = ownersSerials[_from];
+
+        if (ownersSerials[_from].length > 0 ) {
+            ownersSerialsFrom[assetOwnerIndex] = ownersSerialsFrom[ownersSerialsFrom.length-1];
+            assets[ ownersSerialsFrom[assetOwnerIndex] ].ownerIndex = assetOwnerIndex;
+        }
+        ownersSerials[_from].length--;
+
+        /// move to their new place
         assets[_serial].owner = _to;
+        assets[_serial].ownerIndex = uint64(ownersSerials[_to].length);
+
+        ownersSerials[_to].push(_serial);
 
         LogTransfer(_serial,_from,_to);
 

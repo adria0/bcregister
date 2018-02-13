@@ -22,9 +22,31 @@ contract("Assets", (accounts) => {
             caducity     : asset[4],
             description  : asset[5],
             customAttr1  : asset[6].toNumber(),
-            customAttr2  : asset[7].toNumber()
+            customAttr2  : asset[7].toNumber(),
+            ownerIndex   : asset[8].toNumber()
         }
     }
+
+    const dumpassets = async (acc) => {
+
+        const short = (a) => {
+            return a.owner+",serial:"+a.serial+",index:"+a.ownerIndex
+        }
+
+        let inf=""
+        const count = (await assets.ownerAssetCount(acc)).toNumber()
+        inf+="-----------------------------------------\n"
+        inf+=acc+":\n";
+        for (let i=0;i<count;i++){
+            const serial = await assets.ownersSerials(acc,i)
+            const asset2 = await assets.assets(serial)
+            const asset2map = mapAsset(asset2)
+            inf+=" ->"+i+" serial "+serial+" "+short(asset2map)+"\n"
+        }
+        inf+="----------------------------------------\n"
+        return inf
+    }
+
 
     const {
         0: owner,
@@ -127,10 +149,34 @@ contract("Assets", (accounts) => {
     });
 
 
+    it("Try transfer back and forth", async () => {
+        
+        let result = await assets.mint(acc1, 1000, true, 9191, "asset0", { from: owner });
+        const serial1 = result.logs[ 0 ].args.serial
+        result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
+        const serial2 = result.logs[ 0 ].args.serial
+        result = await assets.mint(acc1, 1000, true, 9191, "asset2", { from: owner });
+        const serial3 = result.logs[ 0 ].args.serial
+        
+        await assets.transfer(serial1, acc2, false, { from: acc1 });
+        await assets.transfer(serial2, acc2, false, { from: acc1 });
+        await assets.transfer(serial3, acc2, false, { from: acc1 });
+
+        await assets.transfer(serial2, acc1, false, { from: acc2 });
+        await assets.transfer(serial1, acc1, false, { from: acc2 });
+        await assets.transfer(serial3, acc1, false, { from: acc2 });
+
+        await assets.transfer(serial3, acc2, false, { from: acc1 });
+        await assets.transfer(serial2, acc2, false, { from: acc1 });
+        await assets.transfer(serial1, acc2, false, { from: acc1 });
+
+    });
+
+
     /// --- burn
 
 
-   it("An asset can be burnt by owner", async () => {
+    it("An asset can be burnt by owner", async () => {
         
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
 
@@ -150,7 +196,7 @@ contract("Assets", (accounts) => {
 
     });
 
-   it("An asset can be burnt by authorized", async () => {
+    it("An asset can be burnt by authorized", async () => {
         
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
 
@@ -278,12 +324,58 @@ contract("Assets", (accounts) => {
         const serial = result.logs[ 0 ].args.serial
         
         try {
-            await await offlineTransfer(serial, acc2, acc1, 1, "00");
+            await offlineTransfer(serial, acc2, acc1, 1, "00");
         } catch (error) {
             return assertFail(error);
         }
+        assert.fail("should have thrown before");
+
+    });    
+
+    it("Can transfer again incrementing nonce", async () => {
+        
+        let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
+        const serial1 = result.logs[ 0 ].args.serial
+        result = await assets.mint(acc1, 1000, true, 9191, "asset2", { from: owner });
+        const serial2 = result.logs[ 0 ].args.serial
+ 
+        await offlineTransfer(serial1, acc2, acc1, 1, "");
+        await offlineTransfer(serial2, acc2, acc1, 2, "");
 
     });
 
+    it("Cannot transfer reusing nonce", async () => {
+        
+        let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
+        const serial1 = result.logs[ 0 ].args.serial
+        result = await assets.mint(acc1, 1000, true, 9191, "asset2", { from: owner });
+        const serial2 = result.logs[ 0 ].args.serial
+        
+        await offlineTransfer(serial1, acc2, acc1, 1, "");
+        try {
+            await offlineTransfer(serial2, acc2, acc1, 1, "");
+        } catch (error) {
+            return assertFail(error);
+        }
+        assert.fail("should have thrown before");
+
+    });
+
+    it("Cannot transfer bypassing a nonce", async () => {
+        
+        let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
+        const serial1 = result.logs[ 0 ].args.serial
+        result = await assets.mint(acc1, 1000, true, 9191, "asset2", { from: owner });
+        const serial2 = result.logs[ 0 ].args.serial
+        
+        await offlineTransfer(serial1, acc2, acc1, 1, "");
+        try {
+            await await offlineTransfer(serial2, acc2, acc1, 3, "");
+        } catch (error) {
+            return assertFail(error);
+        }
+        assert.fail("should have thrown before");
+
+    });
 
 });
