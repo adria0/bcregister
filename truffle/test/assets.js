@@ -28,7 +28,7 @@ contract("Assets", (accounts) => {
 
     const {
         0: owner,
-        1: operator1,
+        1: admin,
         2: acc1,
         3: acc2
     } = accounts;
@@ -37,7 +37,7 @@ contract("Assets", (accounts) => {
 
     beforeEach(async () => {
         assets = await Assets.new();
-        await assets.setAcl(operator1, await assets.ACL_ASSET())
+        await assets.setAcl(admin, await assets.ACL_ASSETADMIN())
     });
 
     /// --- mint
@@ -67,7 +67,7 @@ contract("Assets", (accounts) => {
 
     it("Authorized can mint", async () => {
 
-        await assets.mint(acc1, 1000, true, 9191, "asset1", { from: operator1 });
+        await assets.mint(acc1, 1000, true, 9191, "asset1", { from: admin });
 
     });
 
@@ -156,7 +156,7 @@ contract("Assets", (accounts) => {
 
         const serial = result.logs[ 0 ].args.serial;
 
-        await assets.burn(serial, { from: operator1 });
+        await assets.burn(serial, { from: admin });
 
     });
 
@@ -218,7 +218,7 @@ contract("Assets", (accounts) => {
         
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
         const serial = result.logs[ 0 ].args.serial
-        await assets.setCustomAttr2(serial, 654321 , { from: operator1 });
+        await assets.setCustomAttr2(serial, 654321 , { from: admin });
     });
 
     it("Asset owner cannot set attr2", async () => {
@@ -232,6 +232,10 @@ contract("Assets", (accounts) => {
         }
         assert.fail("should have thrown before");
     });
+
+    /// ---- offline trasfers
+
+
 
 
 });

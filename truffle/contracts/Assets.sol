@@ -13,7 +13,7 @@ contract Assets is AclControlled {
 
     /// --- constants -----------------------------------------------
 
-    uint constant public ACL_ASSET = 2;
+    uint constant public ACL_ASSETADMIN = 2;
 
     /// --- events --------------------------------------------------
 
@@ -31,7 +31,7 @@ contract Assets is AclControlled {
         uint64  caducity;      // unix caducity time        
         string  description;   // description
 
-        uint256 customAttr1;
+        uint256 customAttr1;   // custom attribute, set by  
         uint256 customAttr2;
 
         uint64  ownerIndex;
@@ -47,7 +47,7 @@ contract Assets is AclControlled {
     /// --- public functions ---------------------------------------
     
     function mint(address _owner, uint16 _class, bool _transferable, uint64 _caducity, string _description)
-    onlyAcl(ACL_OWNER|ACL_ASSET) public returns (uint){
+    onlyAcl(ACL_OWNER|ACL_ASSETADMIN) public returns (uint){
         Asset[] storage assetOwner = assetOwners[_owner];
         uint128 serial = uint128(assets.length);
 
@@ -75,7 +75,7 @@ contract Assets is AclControlled {
 
         require (
             msg.sender == assets[_serial].owner
-            || checkAcl(msg.sender,ACL_OWNER|ACL_ASSET)
+            || checkAcl(msg.sender,ACL_OWNER|ACL_ASSETADMIN)
         );
         transferInternal(_serial,assets[_serial].owner,0xdead);
 
@@ -101,7 +101,7 @@ contract Assets is AclControlled {
     }
 
     function setCustomAttr2(uint _serial, uint256 _value)
-    onlyAcl(ACL_OWNER|ACL_ASSET) public {
+    onlyAcl(ACL_OWNER|ACL_ASSETADMIN) public {
 
         require(assets[_serial].owner != 0x0);
         assets[_serial].customAttr2 = _value;
