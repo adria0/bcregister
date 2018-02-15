@@ -32,8 +32,8 @@ contract Assets is AclControlled {
         uint64  caducity;      // unix caducity time        
         string  description;   // description
 
-        uint256 customAttr1;   // custom attribute, set by  
-        uint256 customAttr2;
+        bytes32 customAttr1;   // custom attribute, set by  
+        bytes32 customAttr2;
 
         uint64  ownerIndex;
         
@@ -92,7 +92,7 @@ contract Assets is AclControlled {
         }
     }
     
-    function setCustomAttr1(uint128 _serial, uint256 _value)
+    function setCustomAttr1(uint128 _serial, bytes32 _value)
     onlyAcl(ACL_BYPASS) public {
 
         require(assets[_serial].owner == msg.sender);
@@ -100,7 +100,7 @@ contract Assets is AclControlled {
 
     }
 
-    function setCustomAttr2(uint128 _serial, uint256 _value)
+    function setCustomAttr2(uint128 _serial, bytes32 _value)
     onlyAcl(ACL_OWNER|ACL_ASSETADMIN) public {
 
         require(assets[_serial].owner != 0x0);

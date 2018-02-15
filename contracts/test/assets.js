@@ -11,6 +11,9 @@ contract("Assets", (accounts) => {
 
     const ALFA  = "0x0000000000000000000000000000000000000000"
     const OMEGA = "0x000000000000000000000000000000000000dead"
+    const ATTR1 = web3.sha3("attr1");
+    const ATTR2 = web3.sha3("attr2");
+
     const now = () => Math.floor(Date.now() / 1000)
 
     const mapAsset = asset => {
@@ -21,8 +24,8 @@ contract("Assets", (accounts) => {
             transferable : asset[3],
             caducity     : asset[4],
             description  : asset[5],
-            customAttr1  : asset[6].toNumber(),
-            customAttr2  : asset[7].toNumber(),
+            customAttr1  : asset[6],
+            customAttr2  : asset[7],
             ownerIndex   : asset[8].toNumber()
         }
     }
@@ -226,11 +229,11 @@ contract("Assets", (accounts) => {
         
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
         const serial = result.logs[ 0 ].args.serial
-        await assets.setCustomAttr1(serial, 123456 , { from: acc1 });
+        await assets.setCustomAttr1(serial, ATTR1 , { from: acc1 });
 
         const asset = mapAsset(await assets.assets(result.logs[ 0 ].args.serial))
 
-        assert.equal( asset.customAttr1, 123456 );
+        assert.equal( asset.customAttr1, ATTR1 );
 
     });
 
@@ -239,7 +242,7 @@ contract("Assets", (accounts) => {
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
         const serial = result.logs[ 0 ].args.serial
         try {
-            await assets.setCustomAttr1(serial, 123456 , { from: owner });
+            await assets.setCustomAttr1(serial, ATTR1 , { from: owner });
         } catch (error) {
             return assertFail(error);
         }
@@ -252,11 +255,11 @@ contract("Assets", (accounts) => {
         
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
         const serial = result.logs[ 0 ].args.serial
-        await assets.setCustomAttr2(serial, 654321 , { from: owner });
+        await assets.setCustomAttr2(serial, ATTR2 , { from: owner });
 
         const asset = mapAsset(await assets.assets(result.logs[ 0 ].args.serial))
 
-        assert.equal( asset.customAttr2, 654321 );
+        assert.equal( asset.customAttr2, ATTR2 );
 
     });
 
@@ -264,7 +267,7 @@ contract("Assets", (accounts) => {
         
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
         const serial = result.logs[ 0 ].args.serial
-        await assets.setCustomAttr2(serial, 654321 , { from: admin });
+        await assets.setCustomAttr2(serial, ATTR2 , { from: admin });
     });
 
     it("Asset owner cannot set attr2", async () => {
@@ -272,7 +275,7 @@ contract("Assets", (accounts) => {
         let result = await assets.mint(acc1, 1000, true, 9191, "asset1", { from: owner });
         const serial = result.logs[ 0 ].args.serial
         try {
-            await assets.setCustomAttr2(serial, 654321 , { from: acc1 });
+            await assets.setCustomAttr2(serial, ATTR2 , { from: acc1 });
         } catch (error) {
             return assertFail(error);
         }
