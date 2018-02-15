@@ -1,6 +1,6 @@
-# bcregister
+# BcRegister
 
-This registry system for the Blockchain Catalunya association (https://www.blockchaincatalunya.org)
+An associate registry system for the Blockchain Catalunya association (https://www.blockchaincatalunya.org)
 
 ### Disclaimer
 
