@@ -1,3 +1,5 @@
+/// @author Adrià Massanet <adria@codecontext.io>
+
 pragma solidity ^0.4.15;
 
 import "./AclControlled.sol";
@@ -7,8 +9,6 @@ interface IAssetsFallback {
     function onAssetsFallback(uint _serial) public;
 }
 
-/// @title Assets
-/// @author Adrià Massanet <adria@codecontext.io>
 contract Assets is AclControlled {
 
     /// --- constants -----------------------------------------------

@@ -1,4 +1,3 @@
-/// @title AclControled
 /// @author Adrià Massanet <adria@codecontext.io>
 
 pragma solidity ^0.4.15;
